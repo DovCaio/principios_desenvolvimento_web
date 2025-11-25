@@ -4,8 +4,9 @@
   "description": "Laboratório - Criação de repositório, definição do projeto e HTML com funcionalidade principal  Pré-requisitos: node.js, express e Javascript.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
   },
   "repository": {
     "type": "git",
