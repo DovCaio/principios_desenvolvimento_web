@@ -1,13 +1,16 @@
+import { UserDTO } from "../../dto/UserDTO";
+import prisma from "../../prisma";
+
+
 export const UserRepository = {
-  findAll() {
-    return [{ id: 1, name: "Caio" }];
-  },
-
-  findById(id: number) {
-    return { id, name: "Usuário específico" };
-  },
-
-  create(data: any) {
-    return { id: Date.now(), ...data };
+  async create(data: UserDTO) {
+    return prisma.user.create({
+      data: {
+        cpf: data.cpf,
+        phone: data.phone,
+        name: data.name,
+        userType: data.userType,
+      }
+    });
   }
 };

@@ -11,7 +11,6 @@ export async function resetDatabase() {
     "Lot"
   ];
 
-  // Gera: TRUNCATE "Visitante", "Employee", ... CASCADE;
   const truncateQuery = `
     TRUNCATE TABLE ${tables.map(t => `"${t}"`).join(", ")} CASCADE;
   `;

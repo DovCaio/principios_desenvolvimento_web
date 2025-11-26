@@ -22,6 +22,7 @@
   "homepage": "https://github.com/DovCaio/minitest1_principios_desenvovolvimento_web#readme",
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "class-validator": "^0.14.3",
     "express": "^5.1.0",
     "install": "^0.13.0",
     "npm": "^11.6.4"

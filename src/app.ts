@@ -1,6 +1,7 @@
 import express from "express";
 import routes from "./routes";
 import path from "path";
+import { ErrorRequestHandler } from "express";
 export const app = express();
 
 
@@ -11,4 +12,15 @@ app.use(routes);
 // arquivos estáticos (se quiser)
 app.use(express.static(path.join(__dirname, "public")));
 
-export default app
+const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
+    console.error("🔥 EXPRESS ERROR:", err);
+
+    res.status(500).json({
+        message: err.message,
+        stack: err.stack,
+    });
+};
+
+app.use(errorHandler);
+
+export default app;
