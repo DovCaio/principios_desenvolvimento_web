@@ -21,4 +21,29 @@ export const EmployeeRepository = {
 
     });
   },
+
+  async updateEmployee(userDto: UserDTO) {
+
+
+    const user = await prisma.user.update({
+        where: { cpf: userDto.cpf },
+        data: {
+            phone: userDto.phone,
+            name: userDto.name,
+            userType: userDto.userType,
+        },
+    });
+
+
+
+    return prisma.employee.update({
+      where: {
+        userCpf: userDto.cpf,
+      },
+      data: {
+        employeeType: userDto.employee?.employeeType,
+      },
+      include: { user: true}
+    });
+  }
 };

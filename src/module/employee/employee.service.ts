@@ -5,6 +5,10 @@ export const EmployeeService =  {
 
     async create(userDto: UserDTO) {
         return EmployeeRepository.createEmployee(userDto);
+    },
+
+    async update(userDto: UserDTO) {
+        return EmployeeRepository.updateEmployee(userDto);
     }
 
 }

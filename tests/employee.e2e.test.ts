@@ -22,8 +22,6 @@ describe("Employee Integration Tests", () => {
 
       const response = await request(app).post("/employee").send(payload);
 
-      console.log(response.body);
-
       expect(response.status).toBe(201);
       expect(response.body.user.cpf).toBe(payload.cpf);
       expect(response.body.employeeType).toBe(
@@ -42,6 +40,39 @@ describe("Employee Integration Tests", () => {
       expect(employee).not.toBeNull();
       expect(employee?.employeeType).toBe("GateEmployee");
       expect(employee?.user.name).toBe("Alice Johnson");
+    });
+
+    it("should update an employee with linked user", async () => {
+      const payload = {
+        cpf: "55544433321",
+        phone: "11988880000",
+        name: "John Smith",
+        userType: "EMPLOYEE",
+        employee: {
+          employeeType: "LeisureAreaEmployee",
+        },
+      };
+
+      const response = await request(app).put("/employee").send(payload);
+
+      expect(response.status).toBe(200);
+      expect(response.body.user.cpf).toBe(payload.cpf);
+      expect(response.body.employeeType).toBe(
+        payload.employee.employeeType
+      );
+
+      const employee = await prisma.employee.findFirst({
+        where: {
+          user: {
+            cpf: payload.cpf,
+          },
+        },
+        include: { user: true },
+      });
+
+      expect(employee).not.toBeNull();
+      expect(employee?.employeeType).toBe("LeisureAreaEmployee");
+      expect(employee?.user.name).toBe("John Smith");
     });
   });
 });

@@ -5,5 +5,6 @@ import { asyncHandler } from "../../utils/asyncHandler";
 const useRouter = Router();
 
 useRouter.post("/", EmployeeControler.create);
+useRouter.put("/", EmployeeControler.update);
 
 export default useRouter;
