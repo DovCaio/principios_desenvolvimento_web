@@ -1,1 +1,37 @@
 node_modules
+# Node.js
+# Dependency directory
+/node_modules
+# Production build output (adjust as needed for your build process, e.g., /dist or /build)
+/dist
+/build
+
+# Environment variables
+# It is strongly recommended to add .env files to source control to protect credentials
+.env
+.env*.local
+.env.*.development
+.env.*.production
+
+# Prisma
+# Directory where Prisma Client is generated (default location if not specified otherwise)
+# This directory should be excluded from version control to prevent compatibility issues
+/node_modules/.prisma
+# If you specified a custom output, like "src/generated/prisma", ignore that instead
+# e.g., /src/generated/prisma
+
+# Optional: Logs and other generated files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+# Diagnostic reports (nodejs.org)
+.report.*.json
+# Next.js
+.next
+# VS Code
+.vscode
+# OS generated files
+.DS_Store
+*.seed
+
