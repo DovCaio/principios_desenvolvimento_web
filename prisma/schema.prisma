@@ -1,20 +1,80 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql" 
+  provider = "postgresql"
 }
 
+//
+// ENUMS
+//
+enum UserType {
+  RESIDENT
+  VISITOR
+  EMPLOYEE
+}
+
+enum EmployeeType {
+  LeisureAreaEmployee
+  GateEmployee
+}
+
+//
+// MODELS
+//
 model User {
+  cpf         String       @id @unique
+  phone       String       @unique
+  name        String
+  userType    UserType
 
-  cpf String @id @unique
-  telefone String @unique
-  nome String
-
-
-
+  resident    Resident?
+  employee    Employee?
+  visitor     Visitor?
 }
 
+model Resident {
+  id            Int       @id @default(autoincrement())
+
+  // resident of the lot
+  lotId         Int?
+  lot           Lot?      @relation("LotResidents", fields: [lotId], references: [id])
+
+  // responsible resident (reverse side)
+  responsibleFor Lot?     @relation("LotResponsible")
+
+  userCpf       String    @unique
+  user          User      @relation(fields: [userCpf], references: [cpf])
+}
+
+model Employee {
+  id             Int          @id @default(autoincrement())
+
+  employeeType   EmployeeType
+
+  userCpf        String       @unique
+  user           User         @relation(fields: [userCpf], references: [cpf])
+}
+
+model Visitor {
+  id        Int      @id @default(autoincrement())
+
+  lotId     Int?
+  lot       Lot?     @relation("LotVisitors", fields: [lotId], references: [id])
+
+  userCpf   String   @unique
+  user      User     @relation(fields: [userCpf], references: [cpf])
+}
+
+model Lot {
+  id            Int       @id @default(autoincrement())
+  intercom      String
+
+  // responsible resident (FK stored here)
+  responsibleId Int       @unique
+  responsible   Resident  @relation("LotResponsible", fields: [responsibleId], references: [id])
+
+  residents     Resident[] @relation("LotResidents")
+  visitors      Visitor[]  @relation("LotVisitors")
+}
