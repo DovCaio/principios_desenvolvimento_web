@@ -23,6 +23,11 @@ export const LotRepository = {
     },
     async getAll() {
         return prisma.lot.findMany();
+    },
+    async delete(id: number) {
+        await prisma.lot.delete({
+            where: { id }
+        });
     }
 
 }

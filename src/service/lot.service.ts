@@ -18,5 +18,8 @@ export const LotService = {
     async getAll() {
         const lots = await LotRepository.getAll();
         return lots;
+    },
+    async delete(id: number) {
+        await LotRepository.delete(id);
     }
 }

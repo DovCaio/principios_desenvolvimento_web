@@ -18,5 +18,10 @@ export const LotController =  {
     async getAll(req: Request, res: Response) {
         const lot = await LotService.getAll();
         return res.status(200).json(lot);
+    },
+    async delete(req: Request, res: Response) {
+        const { id } = req.params;
+        await LotService.delete(Number(id));
+        return res.status(201).send();
     }
 }

@@ -62,6 +62,14 @@ describe("Employee Integration Tests", () => {
         expect(response.body.length).toBeGreaterThan(0);
     });
 
+    it("should delte an lot", async () => {
+
+        const response = await request(app)
+            .delete(`/lot/${ids[0]}`)
+            .expect(201);
+
+
+    });
   })
 
 });
