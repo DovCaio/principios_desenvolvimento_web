@@ -73,8 +73,8 @@ model Lot {
   intercom      String
 
   // responsible resident (FK stored here)
-  responsibleId Int       @unique
-  responsible   Resident  @relation("LotResponsible", fields: [responsibleId], references: [id])
+  responsibleId Int?       @unique
+  responsible   Resident?  @relation("LotResponsible", fields: [responsibleId], references: [id])
 
   residents     Resident[] @relation("LotResidents")
   visitors      Visitor[]  @relation("LotVisitors")

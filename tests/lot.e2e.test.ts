@@ -9,6 +9,8 @@ describe("Employee Integration Tests", () => {
 
   describe("CRUD", () => {
 
+    const ids: number[] = [];
+
     it("should create an lot", async () => {
         const payload = {
             intercom: "A123",
@@ -17,7 +19,25 @@ describe("Employee Integration Tests", () => {
             .post("/lot")
             .send(payload)
             .expect(201);
+        
+        expect(response.body).toHaveProperty("id");
+        expect(response.body.intercom).toBe(payload.intercom);
+        ids.push(response.body.id);
+    });
 
+    it("should put an lot", async () => {
+        const payload = {
+            intercom: "A124",
+        }
+
+        const response = await request(app)
+            .put(`/lot/${ids[0]}`)
+            .send(payload)
+            .expect(200);
+
+
+        expect(response.body).toHaveProperty("id");
+        expect(response.body.intercom).toBe(payload.intercom);
     });
 
   })
