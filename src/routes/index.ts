@@ -6,5 +6,6 @@ const routes = Router();
 
 routes.use("/employee", employeeRoutes);
 routes.use("/services", serviceRoutes);
+routes.use("/lot", lotRoute);
 
 export default routes;
