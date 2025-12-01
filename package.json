@@ -9,9 +9,10 @@
     "start": "node dist/server.js",
     "test:watch": "jest --watch",
     "test": "jest --runInBand --coverage",
-    "test:employee": "jest --runInBand -- testPathPatterns=tests/employee.e2e.test.ts",
-    "test:lot": "jest --runInBand --testPathPatterns=tests/lot.e2e.test.ts",
     "test:resident": "jest --runInBand --testPathPatterns=tests/resident.e2e.test.ts"
+    "test:employee": "jest --runInBand --testPathPatterns=tests/employee.e2e.test.ts",
+    "test:lot": "jest --runInBand --testPathPatterns=tests/lot.e2e.test.ts",
+    "test:service": "jest --runInBand --testPathPatterns=tests/serviceRequest.e2e.test.ts"
   },
   "repository": {
     "type": "git",
