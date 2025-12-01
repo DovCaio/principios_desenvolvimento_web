@@ -30,5 +30,15 @@ export const ResidentRepository = {
             },
             include: { user: true },
         });
+    },
+    async getOne(cpf: string) {
+        return prisma.resident.findFirst({
+            where: {
+                user: {
+                    cpf: cpf,
+                },
+            },
+            include: { user: true },
+        });
     }
 }

@@ -6,5 +6,8 @@ export const ResidentService = {
     },
     async update(cpf: string, data: UserPutDTO) {
         return ResidentRepository.update(cpf, data);
+    },
+    async getOne(cpf: string) {
+        return ResidentRepository.getOne(cpf);
     }
 }

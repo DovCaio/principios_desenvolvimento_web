@@ -10,5 +10,10 @@ export const ResidentController =  {
         const { cpf } = req.params;
         const resident = await ResidentService.update(cpf, req.body);
         return res.status(200).json(resident);
+    },
+    async getOne(req: Request, res: Response) {
+        const { cpf } = req.params;
+        const resident = await ResidentService.getOne(cpf);
+        return res.status(200).json(resident);
     }
 }
