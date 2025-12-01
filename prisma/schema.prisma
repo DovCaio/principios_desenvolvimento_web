@@ -55,12 +55,10 @@ model User {
 model Resident {
   id            Int     @id @default(autoincrement())
 
-  // resident of the lot
   lotId         Int?
   lot           Lot?    @relation("LotResidents", fields: [lotId], references: [id])
 
-  // responsible resident (reverse side)
-  responsibleFor Lot?   @relation("LotResponsible")
+  responsibleFor Lot?     @relation("LotResponsible")
 
   userCpf       String  @unique
   user          User    @relation(fields: [userCpf], references: [cpf])
@@ -89,7 +87,6 @@ model Lot {
   id            Int       @id @default(autoincrement())
   intercom      String
 
-  // responsible resident (FK stored here)
   responsibleId Int?       @unique
   responsible   Resident?  @relation("LotResponsible", fields: [responsibleId], references: [id])
 
