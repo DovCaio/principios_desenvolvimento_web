@@ -13,7 +13,7 @@ describe("ServiceRequest E2E Tests", () => {
 
   const servicePayload = {
     description: "Lâmpada do corredor queimada",
-    type: "COMMON_AREA"
+    type: "COMMON_AREA" as const
   };
 
   beforeAll(async () => {
@@ -78,4 +78,56 @@ describe("ServiceRequest E2E Tests", () => {
       expect(createdItem).toBeDefined();
     });
   });
+
+  describe("PUT /services/:id", () => {
+    it("should update service status and description", async () => {
+      const newService = await prisma.serviceRequest.create({
+        data: {
+          description: "Teste Update Antigo",
+          type: "MAINTENANCE",
+          requesterCpf: mockUser.cpf,
+          status: "PENDING"
+        }
+      });
+
+      const response = await request(app)
+        .put(`/services/${newService.id}`)
+        .send({
+          status: "COMPLETED",
+          description: "Teste Update Novo"
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.status).toBe("COMPLETED");
+      expect(response.body.description).toBe("Teste Update Novo");
+
+      const updatedDb = await prisma.serviceRequest.findUnique({
+        where: { id: newService.id }
+      });
+      expect(updatedDb?.status).toBe("COMPLETED");
+    });
+  });
+
+  describe("DELETE /services/:id", () => {
+    it("should delete a service request", async () => {
+      const serviceToDelete = await prisma.serviceRequest.create({
+        data: {
+          description: "Vou ser deletado",
+          type: "OTHER",
+          requesterCpf: mockUser.cpf
+        }
+      });
+
+      const response = await request(app)
+        .delete(`/services/${serviceToDelete.id}`);
+
+      expect(response.status).toBe(204);
+
+      const checkDb = await prisma.serviceRequest.findUnique({
+        where: { id: serviceToDelete.id }
+      });
+      expect(checkDb).toBeNull();
+    });
+  });
+
 });

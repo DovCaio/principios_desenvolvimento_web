@@ -34,5 +34,34 @@ export const ServiceRequestController = {
         } catch (error: any) {
             return res.status(400).json({ error: error.message });
         }
+    },
+
+    async update(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            const { description, type, status, targetLotId } = req.body;
+
+            const result = await ServiceRequestService.update(Number(id), {
+                description,
+                type,
+                status,
+                targetLotId
+            });
+
+            return res.status(200).json(result);
+        } catch (error: any) {
+            return res.status(400).json({ error: error.message });
+        }
+    },
+
+    async delete(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            await ServiceRequestService.delete(Number(id));
+            return res.status(204).send();
+        } catch (error: any) {
+            return res.status(400).json({ error: error.message });
+        }
     }
+    
 };

@@ -1,4 +1,5 @@
 import { ServiceRequestCreateDTO } from "../dto/serviceRequest/ServiceRequestCreateDTO";
+import { ServiceRequestPutDTO } from "../dto/serviceRequest/ServiceRequestPutDTO";
 import { ServiceRequestRepository } from "../repository/serviceRequest.repository";
 
 export const ServiceRequestService = {
@@ -13,5 +14,21 @@ export const ServiceRequestService = {
 
     async listAll() {
         return ServiceRequestRepository.findAll();
+    },
+
+    async update(id: number, dto: ServiceRequestPutDTO) {
+        const exists = await ServiceRequestRepository.findById(id);
+        if (!exists) {
+            throw new Error("Solicitação de serviço não encontrada.");
+        }
+        return ServiceRequestRepository.update(id, dto);
+    },
+
+    async delete(id: number) {
+        const exists = await ServiceRequestRepository.findById(id);
+        if (!exists) {
+            throw new Error("Solicitação de serviço não encontrada.");
+        }
+        return ServiceRequestRepository.delete(id);
     }
 };
