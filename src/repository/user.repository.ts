@@ -22,6 +22,6 @@ export const UserRepository = {
         name: data.name,
         userType: data.userType,
       }
-    });
+    })
   }
 };
