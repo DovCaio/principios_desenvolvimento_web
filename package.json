@@ -13,7 +13,8 @@
     "test:employee": "jest --runInBand --testPathPatterns=tests/employee.e2e.test.ts",
     "test:lot": "jest --runInBand --testPathPatterns=tests/lot.e2e.test.ts",
     "test:service": "jest --runInBand --testPathPatterns=tests/serviceRequest.e2e.test.ts",
-    "test:visitor": "jest --runInBand --testPathPatterns=tests/visitant.e2e.test.ts"
+    "test:visitor": "jest --runInBand --testPathPatterns=tests/visitant.e2e.test.ts",
+    "test:leisure": "jest --runInBand --testPathPatterns=tests/leisureArea.e2e.test.ts"
   },
   "repository": {
     "type": "git",
@@ -28,6 +29,7 @@
   "homepage": "https://github.com/DovCaio/minitest1_principios_desenvovolvimento_web#readme",
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
     "express": "^5.2.1",
     "install": "^0.13.0",
