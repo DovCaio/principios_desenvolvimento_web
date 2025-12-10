@@ -1,10 +1,16 @@
 import { EmployeeType } from "@prisma/client";
-import { IsEnum, IsOptional } from "class-validator";
+import { IsEnum, IsOptional, IsString } from "class-validator";
 
 export class EmployeePutDTO {
+    @IsOptional()
+    @IsString()
+    name?: string;
 
     @IsOptional()
-    @IsEnum(EmployeeType, { message: "userType inválido" })
-    employeeType?: EmployeeType
+    @IsString()
+    phone?: string;
 
+    @IsOptional()
+    @IsEnum(EmployeeType)
+    type?: EmployeeType;
 }
