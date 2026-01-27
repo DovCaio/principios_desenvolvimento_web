@@ -3,6 +3,9 @@ import routes from "./routes";
 import path from "path";
 import { ErrorRequestHandler } from "express";
 export const app = express();
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 
 // todas as rotas são registradas em /routes/index.ts

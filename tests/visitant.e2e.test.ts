@@ -1,5 +1,5 @@
 import request from "supertest";
-import app from "../src/app"; // seu Express
+import app from "../src/app";
 import prisma from "../src/prisma";
 import { resetDatabase } from "../src/prisma";
 

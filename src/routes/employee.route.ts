@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { EmployeeControler } from "../controller/employee.controller";
-import { asyncHandler } from "../utils/asyncHandler";
 
 const useRouter = Router();
 
@@ -79,7 +78,7 @@ useRouter.put("/:cpf", EmployeeControler.update);
  *       200:
  *         description: Dados retornados
  */
-useRouter.get("/:id", EmployeeControler.get);
+useRouter.get("/:cpf", EmployeeControler.get);
 
 /**
  * @swagger
@@ -97,7 +96,7 @@ useRouter.get("/:id", EmployeeControler.get);
  *       204:
  *         description: Funcionário deletado
  */
-useRouter.delete("/:id", EmployeeControler.delete);
+useRouter.delete("/:cpf", EmployeeControler.delete);
 
 
 export default useRouter;
