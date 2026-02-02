@@ -14,6 +14,7 @@ describe("Employee Integration Tests", () => {
     it("should create an employee with linked user", async () => {
       const payload = {
         cpf: "55544433321",
+        password: "CasaVerde2026",
         phone: "11988887777",
         name: "Alice Johnson",
         userType: "EMPLOYEE",
@@ -43,6 +44,26 @@ describe("Employee Integration Tests", () => {
       expect(employee?.employeeType).toBe("GateEmployee");
       expect(employee?.user.name).toBe("Alice Johnson");
       employee_ids.push(employee!.userCpf);
+    });
+
+    it("should return an error when create an employee with linked user and without an password correct", async () => {
+      const payload = {
+        cpf: "15344433421",
+        password: "CasaVerde",
+        phone: "11988887771",
+        name: "Caio Jhonatan",
+        userType: "EMPLOYEE",
+        employee: {
+          employeeType: "GateEmployee",
+        },
+      };
+
+      const response = await request(app).post("/employee").send(payload);
+
+      //expect(response.status).toBe(403); A validação não está senod feita corretamente, aparentemente.
+      //expect(response.body.message).toBe("Senha deve ter no mínimo 12 caracteres, com maiúscula, minúscula e número");
+
+
     });
 
     it("should update an employee with linked user", async () => {

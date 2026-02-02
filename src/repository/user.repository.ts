@@ -8,6 +8,7 @@ export const UserRepository = {
     return prisma.user.create({
       data: {
         cpf: data.cpf,
+        password: data.password,
         phone: data.phone,
         name: data.name,
         userType: data.userType,
