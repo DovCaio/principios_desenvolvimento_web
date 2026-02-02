@@ -5,6 +5,7 @@ import lotRoute from "./lot.route";
 import residentRoutes from "./resident.route";
 import { serviceRoutes } from "./serviceRequest.route";
 import visitantRoutes from "./visitant.route";
+import adminRoutes from "./admin.route";
 
 const routes = Router();
 
@@ -14,4 +15,5 @@ routes.use("/lot", lotRoute);
 routes.use("/visitor", visitantRoutes);
 routes.use("/resident", residentRoutes);
 routes.use("/leisure-areas", leisureRoutes);
+routes.use("/admin", adminRoutes)
 export default routes;
