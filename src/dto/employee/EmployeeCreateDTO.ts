@@ -16,6 +16,10 @@ export class EmployeeCreateDTO {
     phone: string;
 
     @IsNotEmpty()
+    @IsString()
+    password: string;
+
+    @IsNotEmpty()
     @IsEnum(EmployeeType, { message: "Tipo de funcionário inválido" })
     employeeType: EmployeeType;
 }
