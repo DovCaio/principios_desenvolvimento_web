@@ -14,6 +14,7 @@ describe("Employee Integration Tests", () => {
         cpf: "00044433321",
         phone: "11988887777",
         name: "Nolan Smith",
+        password: "SENHAFROtissima112421!",
         userType: "VISITOR",
       };
 
