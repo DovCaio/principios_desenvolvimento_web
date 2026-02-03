@@ -1,32 +1,44 @@
-import { UserType } from "@prisma/client";
-import { hash } from "bcryptjs";
-import { EmployeeCreateDTO } from "../dto/employee/EmployeeCreateDTO";
-import { UserPutDTO } from "../dto/user/UserPutDTO";
-import { EmployeeRepository } from "../repository/employee.repository";
+import { PrismaClient } from "@prisma/client";
+import { compare } from "bcryptjs";
+import jwt from "jsonwebtoken";
 
-export const EmployeeService = {
+const prisma = new PrismaClient();
 
-    async create(userDto: EmployeeCreateDTO) {
-        const hashedPassword = await hash(userDto.password, 8);
+export const AuthService = {
+    async login(cpf: string, passwordPlain: string) {
+        const user = await prisma.user.findUnique({
+            where: { cpf }
+        });
+
+        if (!user) {
+            throw new Error("CPF ou senha inválidos");
+        }
+
+        const isPasswordValid = await compare(passwordPlain, user.password);
+
+        if (!isPasswordValid) {
+            throw new Error("CPF ou senha inválidos");
+        }
+
+        const secret = process.env.JWT_SECRET || "segredo_padrao_dev";
         
-        const dataWithHash = {
-            ...userDto,
-            password: hashedPassword,
-            userType: UserType.EMPLOYEE 
+        const token = jwt.sign(
+            { 
+                cpf: user.cpf, 
+                userType: user.userType,
+                name: user.name
+            }, 
+            secret, 
+            { expiresIn: "1d" }
+        );
+
+        return { 
+            token, 
+            user: { 
+                name: user.name, 
+                cpf: user.cpf, 
+                type: user.userType 
+            } 
         };
-
-        return EmployeeRepository.createEmployee(dataWithHash as any);
-    },
-
-    async update(cpf: string, userDto: UserPutDTO) {
-        return EmployeeRepository.updateEmployee(cpf, userDto);
-    },
-
-    async get(cpf: string) {
-        return EmployeeRepository.getEmployee(cpf);
-    },
-
-    async delete(cpf: string) {
-        return EmployeeRepository.deleteEmployee(cpf);
     }
 }

@@ -1,10 +1,8 @@
 import { Request, Response } from "express";
 import { EmployeeService } from "../service/employee.service";
 
-import { plainToInstance } from "class-transformer";
-import { validate } from "class-validator";
 
-export const EmployeeControler = {
+export const EmployeeController = {
   async create(req: Request, res: Response) {
     const employee = await EmployeeService.create(req.body);
     return res.status(201).json(employee);

@@ -11,7 +11,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
     try {
         const secret = process.env.JWT_SECRET || "segredo_padrao_dev";
         const decoded = jwt.verify(token, secret);
-        (req as any).user = decoded;
+        (req as any).user = decoded; 
         next();
     } catch (err) {
         res.status(401).json({ message: "Token inválido" });
