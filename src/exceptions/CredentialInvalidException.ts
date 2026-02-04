@@ -3,6 +3,6 @@ export class CredentialInvalidException extends Error {
 
   constructor(message = "As credencias erradas.") {
     super(message);
-    this.statusCode = 403;
+    this.statusCode = 401;
   }
 }

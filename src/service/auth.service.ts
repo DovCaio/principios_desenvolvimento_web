@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
-import { compare } from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { CredentialInvalidException } from "../exceptions/CredentialInvalidException";
+import { comparePassword, hashPassword } from "../utils/auth";
 
 const prisma = new PrismaClient();
 
@@ -15,7 +15,7 @@ export const AuthService = {
             throw new CredentialInvalidException();
         }
 
-        const isPasswordValid = await compare(passwordPlain, user.password);
+        const isPasswordValid = await comparePassword(passwordPlain, user.password);
 
         if (!isPasswordValid) {
             throw new CredentialInvalidException();

@@ -1,13 +1,13 @@
 import { UserType } from "@prisma/client";
-import { hash } from "bcryptjs";
 import { EmployeeCreateDTO } from "../dto/employee/EmployeeCreateDTO";
 import { UserPutDTO } from "../dto/user/UserPutDTO";
 import { EmployeeRepository } from "../repository/employee.repository";
+import { hashPassword } from "../utils/auth";
 
 export const EmployeeService = {
 
     async create(userDto: EmployeeCreateDTO) {
-        const hashedPassword = await hash(userDto.password, 8);
+        const hashedPassword = await hashPassword(userDto.password);
 
         const data = {
             ...userDto,
