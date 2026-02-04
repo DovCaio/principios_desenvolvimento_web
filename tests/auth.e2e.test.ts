@@ -34,7 +34,7 @@ describe("Employee Integration Tests", () => {
   beforeAll(async () => {
     await request(app).post("/employee").send(employee_payload);
     await request(app).post("/resident").send(resident_payload);
-    await request(app).post("/visitant").send(visitant_payload);
+    await request(app).post("/visitor").send(visitant_payload);
   });
 
   afterAll(async () => {
@@ -95,5 +95,30 @@ describe("Employee Integration Tests", () => {
     });
   });
 
+  describe("visitor auth", () => {
+    it("login with a visitor existent", async () => {
+      const payload = {
+        cpf: visitant_payload.cpf,
+        password: visitant_payload.password,
+      };
 
+      const response = await request(app).post("/auth/login").send(payload);
+
+      expect(response.status).toBe(200);
+
+      expect(response.body).toHaveProperty("token");
+
+      expect(typeof response.body.token).toBe("string");
+      expect(response.body.token.length).toBeGreaterThan(20);
+    });
+
+    it("deve falhar com senha incorreta", async () => {
+      const response = await request(app).post("/auth/login").send({
+        cpf: visitant_payload.cpf,
+        password: "senha_errada",
+      });
+
+      expect(response.status).toBe(401);
+    });
+  });
 });

@@ -15,7 +15,7 @@ app.use(routes);
 app.use(express.static(path.join(__dirname, "public")));
 
 const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
-  //console.error("🔥 EXPRESS ERROR:", err); serve para depurar
+  console.error("🔥 EXPRESS ERROR:", err);
 
   const status = err.statusCode || err.status || 500;
 
