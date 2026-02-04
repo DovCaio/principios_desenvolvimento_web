@@ -1,11 +1,21 @@
-import { UserCreateDTO } from "../dto/user/UserCreateDTO";
+import { UserType } from "@prisma/client";
+import { EmployeeCreateDTO } from "../dto/employee/EmployeeCreateDTO";
 import { UserPutDTO } from "../dto/user/UserPutDTO";
 import { EmployeeRepository } from "../repository/employee.repository";
+import { hashPassword } from "../utils/auth";
 
-export const EmployeeService =  {
+export const EmployeeService = {
 
-    async create(userDto: UserCreateDTO) {
-        return EmployeeRepository.createEmployee(userDto);
+    async create(userDto: EmployeeCreateDTO) {
+        const hashedPassword = await hashPassword(userDto.password);
+
+        const data = {
+            ...userDto,
+            password: hashedPassword,
+            userType: UserType.EMPLOYEE
+        };
+
+        return EmployeeRepository.createEmployee(data as any);
     },
 
     async update(cpf: string, userDto: UserPutDTO) {
@@ -19,5 +29,4 @@ export const EmployeeService =  {
     async delete(cpf: string) {
         return EmployeeRepository.deleteEmployee(cpf);
     }
-
 }

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { EmployeeControler } from "../controller/employee.controller";
+import { EmployeeController } from "../controller/employee.controller";
 
 const useRouter = Router();
 
@@ -36,7 +36,7 @@ const useRouter = Router();
  *       201:
  *         description: Funcionário criado com sucesso
  */
-useRouter.post("/", EmployeeControler.create);
+useRouter.post("/", EmployeeController.create);
 
 /**
  * @swagger
@@ -60,7 +60,7 @@ useRouter.post("/", EmployeeControler.create);
  *       200:
  *         description: Funcionário atualizado
  */
-useRouter.put("/:cpf", EmployeeControler.update);
+useRouter.put("/:cpf", EmployeeController.update);
 
 /**
  * @swagger
@@ -78,7 +78,7 @@ useRouter.put("/:cpf", EmployeeControler.update);
  *       200:
  *         description: Dados retornados
  */
-useRouter.get("/:cpf", EmployeeControler.get);
+useRouter.get("/:cpf", EmployeeController.get);
 
 /**
  * @swagger
@@ -96,7 +96,7 @@ useRouter.get("/:cpf", EmployeeControler.get);
  *       204:
  *         description: Funcionário deletado
  */
-useRouter.delete("/:cpf", EmployeeControler.delete);
+useRouter.delete("/:cpf", EmployeeController.delete);
 
 
 export default useRouter;

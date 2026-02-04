@@ -40,6 +40,7 @@ enum ServiceType {
 
 model User {
   cpf         String    @id
+  password    String    
   phone       String    @unique
   name        String
   userType    UserType

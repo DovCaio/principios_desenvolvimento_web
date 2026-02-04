@@ -8,6 +8,7 @@ describe("ServiceRequest E2E Tests", () => {
     cpf: "99988877700",
     name: "Tester E2E",
     phone: "11999990000",
+    password: "SEnhaBAsTAte_forte2",
     userType: "RESIDENT" as const
   };
 

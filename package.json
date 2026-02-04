@@ -14,7 +14,8 @@
     "test:lot": "jest --runInBand --testPathPatterns=tests/lot.e2e.test.ts",
     "test:service": "jest --runInBand --testPathPatterns=tests/serviceRequest.e2e.test.ts",
     "test:visitor": "jest --runInBand --testPathPatterns=tests/visitant.e2e.test.ts",
-    "test:leisure": "jest --runInBand --testPathPatterns=tests/leisureArea.e2e.test.ts"
+    "test:leisure": "jest --runInBand --testPathPatterns=tests/leisureArea.e2e.test.ts",
+    "test:auth": "jest --runInBand --testPathPatterns=tests/auth.e2e.test.ts"
   },
   "repository": {
     "type": "git",
