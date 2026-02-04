@@ -65,6 +65,8 @@ describe("Employee Integration Tests", () => {
       });
 
       expect(response.status).toBe(401);
+      expect(response.body.message).toBe("As credencias estão erradas.");
+
     });
   });
 
@@ -92,6 +94,8 @@ describe("Employee Integration Tests", () => {
       });
 
       expect(response.status).toBe(401);
+      expect(response.body.message).toBe("As credencias estão erradas.");
+
     });
   });
 
@@ -119,6 +123,7 @@ describe("Employee Integration Tests", () => {
       });
 
       expect(response.status).toBe(401);
+      expect(response.body.message).toBe("As credencias estão erradas.");
     });
   });
 });
