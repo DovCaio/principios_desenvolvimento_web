@@ -32,15 +32,9 @@ describe("Employee Integration Tests", () => {
   };
 
   beforeAll(async () => {
-    const response1 = await request(app)
-      .post("/employee")
-      .send(employee_payload);
-    const response2 = await request(app)
-      .post("/resident")
-      .send(resident_payload);
-    const response3 = await request(app)
-      .post("/visitant")
-      .send(visitant_payload);
+    await request(app).post("/employee").send(employee_payload);
+    await request(app).post("/resident").send(resident_payload);
+    await request(app).post("/visitant").send(visitant_payload);
   });
 
   afterAll(async () => {
@@ -73,4 +67,33 @@ describe("Employee Integration Tests", () => {
       expect(response.status).toBe(401);
     });
   });
+
+  describe("resident auth", () => {
+    it("login with a resident existent", async () => {
+      const payload = {
+        cpf: resident_payload.cpf,
+        password: resident_payload.password,
+      };
+
+      const response = await request(app).post("/auth/login").send(payload);
+
+      expect(response.status).toBe(200);
+
+      expect(response.body).toHaveProperty("token");
+
+      expect(typeof response.body.token).toBe("string");
+      expect(response.body.token.length).toBeGreaterThan(20);
+    });
+
+    it("deve falhar com senha incorreta", async () => {
+      const response = await request(app).post("/auth/login").send({
+        cpf: resident_payload.cpf,
+        password: "senha_errada",
+      });
+
+      expect(response.status).toBe(401);
+    });
+  });
+
+
 });
