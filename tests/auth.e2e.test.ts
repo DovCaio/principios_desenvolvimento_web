@@ -4,7 +4,7 @@ import prisma from "../src/prisma";
 import { resetDatabase } from "../src/prisma";
 
 describe("Employee Integration Tests", () => {
-  const employee_payload = {
+  const gate_employee_payload = {
     cpf: "22255544432",
     password: "aBc5125122fwsafafgAdae",
     phone: "21987654321",
@@ -12,6 +12,16 @@ describe("Employee Integration Tests", () => {
     userType: "EMPLOYEE",
     employee: {
       employeeType: "GateEmployee",
+    },
+  };
+  const leisure_payload = {
+    cpf: "98765432109",
+    password: "VERdeCasa2026",
+    phone: "11988887412",
+    name: "Carl Johnson",
+    userType: "EMPLOYEE",
+    employee: {
+      employeeType: "LeisureAreaEmployee",
     },
   };
 
@@ -32,7 +42,8 @@ describe("Employee Integration Tests", () => {
   };
 
   beforeAll(async () => {
-    await request(app).post("/employee").send(employee_payload);
+    await request(app).post("/employee").send(gate_employee_payload);
+    await request(app).post("/employee").send(leisure_payload);
     await request(app).post("/resident").send(resident_payload);
     await request(app).post("/visitor").send(visitant_payload);
   });
@@ -42,10 +53,10 @@ describe("Employee Integration Tests", () => {
   });
 
   describe("employee auth", () => {
-    it("login with a employee existent", async () => {
+    it("login with a employee existent employee", async () => {
       const payload = {
-        cpf: employee_payload.cpf,
-        password: employee_payload.password,
+        cpf: gate_employee_payload.cpf,
+        password: gate_employee_payload.password,
       };
 
       const response = await request(app).post("/auth/login").send(payload);
@@ -58,15 +69,40 @@ describe("Employee Integration Tests", () => {
       expect(response.body.token.length).toBeGreaterThan(20);
     });
 
-    it("deve falhar com senha incorreta", async () => {
+    it("deve falhar com senha incorreta gate employee", async () => {
       const response = await request(app).post("/auth/login").send({
-        cpf: employee_payload.cpf,
+        cpf: gate_employee_payload.cpf,
         password: "senha_errada",
       });
 
       expect(response.status).toBe(401);
       expect(response.body.message).toBe("As credencias estão erradas.");
+    });
 
+    it("login with a employee existent leisure employee", async () => {
+      const payload = {
+        cpf: leisure_payload.cpf,
+        password: leisure_payload.password,
+      };
+
+      const response = await request(app).post("/auth/login").send(payload);
+
+      expect(response.status).toBe(200);
+
+      expect(response.body).toHaveProperty("token");
+
+      expect(typeof response.body.token).toBe("string");
+      expect(response.body.token.length).toBeGreaterThan(20);
+    });
+
+    it("deve falhar com senha incorreta leisure employee", async () => {
+      const response = await request(app).post("/auth/login").send({
+        cpf: leisure_payload.cpf,
+        password: "senha_errada",
+      });
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe("As credencias estão erradas.");
     });
   });
 
@@ -95,7 +131,6 @@ describe("Employee Integration Tests", () => {
 
       expect(response.status).toBe(401);
       expect(response.body.message).toBe("As credencias estão erradas.");
-
     });
   });
 
@@ -127,9 +162,7 @@ describe("Employee Integration Tests", () => {
     });
   });
 
-
   describe("testes em comum", () => {
-
     it("deve falhar com cpf inexistente e senha incorreta", async () => {
       const response = await request(app).post("/auth/login").send({
         cpf: "00000000000",
@@ -143,7 +176,7 @@ describe("Employee Integration Tests", () => {
     it("deve falhar com cpf errado, porém senha correta employee", async () => {
       const response = await request(app).post("/auth/login").send({
         cpf: "11111111111",
-        password: employee_payload.password,
+        password: gate_employee_payload.password,
       });
 
       expect(response.status).toBe(401);
@@ -169,7 +202,5 @@ describe("Employee Integration Tests", () => {
       expect(response.status).toBe(401);
       expect(response.body.message).toBe("As credencias estão erradas.");
     });
-
-
-  })
+  });
 });
