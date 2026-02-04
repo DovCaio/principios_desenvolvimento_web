@@ -1,8 +1,11 @@
+import { UserCreateDTO } from "../dto/user/UserCreateDTO";
 import { UserPutDTO } from "../dto/user/UserPutDTO";
 import {ResidentRepository} from "../repository/resident.repository";
+import { hashPassword } from "../utils/auth";
 export const ResidentService = {
-    async create(data: any) {
-        return ResidentRepository.create(data); 
+    async create(userDto: UserCreateDTO) {
+        userDto.password = await hashPassword(userDto.password);
+        return ResidentRepository.create(userDto); 
     },
     async update(cpf: string, data: UserPutDTO) {
         return ResidentRepository.update(cpf, data);
