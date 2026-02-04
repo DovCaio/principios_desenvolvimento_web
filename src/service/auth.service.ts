@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { compare } from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { CredentialInvalidException } from "../exceptions/CredentialInvalidException";
 
 const prisma = new PrismaClient();
 
@@ -11,13 +12,13 @@ export const AuthService = {
         });
 
         if (!user) {
-            throw new Error("CPF ou senha inválidos");
+            throw new CredentialInvalidException();
         }
 
         const isPasswordValid = await compare(passwordPlain, user.password);
 
         if (!isPasswordValid) {
-            throw new Error("CPF ou senha inválidos");
+            throw new CredentialInvalidException();
         }
 
         const secret = process.env.JWT_SECRET || "segredo_padrao_dev";
