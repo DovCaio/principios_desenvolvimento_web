@@ -183,6 +183,16 @@ describe("Employee Integration Tests", () => {
       expect(response.body.message).toBe("As credencias estão erradas.");
     });
 
+    it("deve falhar com cpf errado, porém senha correta employee", async () => {
+      const response = await request(app).post("/auth/login").send({
+        cpf: "55555555555",
+        password: gate_employee_payload.password,
+      });
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe("As credencias estão erradas.");
+    });
+
     it("deve falhar com cpf errado, porém senha correta resident", async () => {
       const response = await request(app).post("/auth/login").send({
         cpf: "22222222222",
