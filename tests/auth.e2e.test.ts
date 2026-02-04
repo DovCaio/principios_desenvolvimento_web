@@ -126,4 +126,50 @@ describe("Employee Integration Tests", () => {
       expect(response.body.message).toBe("As credencias estão erradas.");
     });
   });
+
+
+  describe("testes em comum", () => {
+
+    it("deve falhar com cpf inexistente e senha incorreta", async () => {
+      const response = await request(app).post("/auth/login").send({
+        cpf: "00000000000",
+        password: "senha_errada",
+      });
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe("As credencias estão erradas.");
+    });
+
+    it("deve falhar com cpf errado, porém senha correta employee", async () => {
+      const response = await request(app).post("/auth/login").send({
+        cpf: "11111111111",
+        password: employee_payload.password,
+      });
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe("As credencias estão erradas.");
+    });
+
+    it("deve falhar com cpf errado, porém senha correta resident", async () => {
+      const response = await request(app).post("/auth/login").send({
+        cpf: "22222222222",
+        password: resident_payload.password,
+      });
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe("As credencias estão erradas.");
+    });
+
+    it("deve falhar com cpf errado, porém senha correta resident", async () => {
+      const response = await request(app).post("/auth/login").send({
+        cpf: "33333333333",
+        password: visitant_payload.password,
+      });
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe("As credencias estão erradas.");
+    });
+
+
+  })
 });
