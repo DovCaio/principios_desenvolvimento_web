@@ -98,11 +98,12 @@ model Lot {
 }
 
 model LeisureArea {
-  id           Int          @id @default(autoincrement())
-  name         String       
-  capacity     Int
-  
-  schedulings  Scheduling[] 
+  id          Int          @id @default(autoincrement())
+  name        String
+  capacity    Int
+  openHour    String?
+  closeHour   String?
+  schedulings Scheduling[]
 }
 
 model Scheduling {
