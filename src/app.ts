@@ -1,17 +1,20 @@
-import express from "express";
-import routes from "./routes";
-import path from "path";
-import { ErrorRequestHandler } from "express";
-export const app = express();
 import dotenv from "dotenv";
+import express, { ErrorRequestHandler } from "express";
+import path from "path";
+import { generalLimiter } from "./middleware/rateLimit.middleware"; // <--- Import novo
+import routes from "./routes";
 
 dotenv.config();
 
-// todas as rotas são registradas em /routes/index.ts
+export const app = express();
+
 app.use(express.json());
+
+// Aplica o limite geral em todas as requisições
+app.use(generalLimiter);
+
 app.use(routes);
 
-// arquivos estáticos (se quiser)
 app.use(express.static(path.join(__dirname, "public")));
 
 const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
