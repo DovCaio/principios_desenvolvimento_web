@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { accessRoutes } from "./access.route";
 import adminRoutes from "./admin.route";
 import { authRoutes } from "./auth.route";
 import employeeRoutes from "./employee.route";
@@ -20,5 +21,6 @@ routes.use("/leisure-areas", leisureRoutes);
 routes.use("/admin", adminRoutes);
 routes.use("/auth", authRoutes);
 routes.use("/scheduling", schedulingRoutes);
+routes.use("/access", accessRoutes);
 
 export default routes;
