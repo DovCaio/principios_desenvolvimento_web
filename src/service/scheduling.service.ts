@@ -15,11 +15,11 @@ export const SchedulingService = {
     const end = new Date(endTime);
 
     if (start < new Date()) {
-      throw new Error("Date cannot be in the past");
+      throw new Error("A data não pode ser no passado");
     }
 
     if (end <= start) {
-      throw new Error("End time must be after start time");
+      throw new Error("O horário de fim deve ser depois do horário de início");
     }
 
     const area = await prisma.leisureArea.findUnique({
@@ -27,7 +27,7 @@ export const SchedulingService = {
     });
 
     if (!area) {
-      throw new Error("Leisure area not found");
+      throw new Error("Área de lazer não encontrada");
     }
 
     if (area.openHour && area.closeHour) {
@@ -38,7 +38,7 @@ export const SchedulingService = {
       const closeRule = parseInt(area.closeHour.split(":")[0]);
 
       if (startHour < openRule || endHour > closeRule) {
-        throw new Error("Scheduling is outside of operating hours");
+        throw new Error("O agendamento está fora do horário de funcionamento");
       }
     }
 
@@ -53,7 +53,7 @@ export const SchedulingService = {
     });
 
     if (conflict) {
-      throw new Error("Time slot unavailable");
+      throw new Error("Horário indisponível");
     }
 
     return await prisma.scheduling.create({
