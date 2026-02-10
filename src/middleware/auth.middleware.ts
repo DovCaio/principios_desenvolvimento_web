@@ -10,7 +10,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
 
     try {
         const secret = process.env.JWT_SECRET || "segredo_padrao_dev";
-        const decoded = jwt.verify(token, secret);
+        const decoded = jwt.verify(token, secret);//Usar função auxiliar existente
         (req as any).user = decoded; 
         next();
     } catch (err) {

@@ -23,7 +23,7 @@ export const AuthService = {
 
         const secret = process.env.JWT_SECRET || "segredo_padrao_dev";
         
-        const token = jwt.sign(
+        const token = jwt.sign( //Mudar para a função auxiliar já existent
             { 
                 cpf: user.cpf, 
                 userType: user.userType,
