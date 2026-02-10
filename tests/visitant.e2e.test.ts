@@ -128,4 +128,78 @@ describe("Employee Integration Tests", () => {
       expect(visitor).toBeNull();
     });
   });
+
+  describe("Entry Record", () => {
+    const visitatsId : number[] = [];
+
+    let jwt: string;
+
+    it("should create an entry record for a visitor", async () => {
+      const payload = {
+        cpf: "00044433321",
+        phone: "11988887777",
+        name: "Nolan Smith",
+        password: "SENHAFROtissima112421!",
+        userType: "VISITOR",
+      };
+
+      const visitorResponse = await request(app).post("/visitor").send(payload);
+      const visitantId = visitorResponse.body.id;
+      visitatsId.push(visitantId);
+
+
+        const loginResponse = await request(app).post("/auth/login").send({
+          cpf: payload.cpf,
+          password: payload.password,
+        });
+
+        jwt = loginResponse.body.token;
+
+      const entryRecordPayload = {
+        visitantId,
+        type: "ENTRY",
+      };
+
+      const response = await request(app)
+        .post("/visitor/entry-record")
+        .set("Authorization", `Bearer ${jwt}`)
+        .send(entryRecordPayload);
+
+      expect(response.status).toBe(200);
+
+      const entryRecords = await prisma.entryRecord.findMany({
+        where: {
+          visitorId: visitantId,
+        },
+      });
+
+      expect(entryRecords.length).toBeGreaterThan(0);
+      expect(entryRecords[0].type).toBe("ENTRY");
+    });
+
+    it("should create an exit record for a visitor", async () => {
+      const visitantId = visitatsId[0];
+
+      const entryRecordPayload = {
+        visitantId,
+        type: "EXIT",
+      };
+
+      const response = await request(app)
+        .post("/visitor/entry-record")
+        .set("Authorization", `Bearer ${jwt}`)
+        .send(entryRecordPayload);
+
+      expect(response.status).toBe(200);
+
+      const entryRecords = await prisma.entryRecord.findMany({
+        where: {
+          visitorId: visitantId,
+        },
+      });
+
+      expect(entryRecords.length).toBeGreaterThan(1);
+      expect(entryRecords[1].type).toBe("EXIT");
+    });
+  });
 });

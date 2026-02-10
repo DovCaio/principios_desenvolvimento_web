@@ -1,3 +1,4 @@
+import { EntryRecordType } from "@prisma/client";
 import { UserCreateDTO } from "../dto/user/UserCreateDTO";
 import { UserPutDTO } from "../dto/user/UserPutDTO";
 import prisma from "../prisma";
@@ -34,6 +35,14 @@ export const VisitorRepository = {
       include: { user: true}
     });
   },
+  async getOneById(id: number) {
+    return prisma.visitor.findFirst({
+      where: {
+        id: id,
+      },
+      include: { user: true}
+    });
+  },
   async getAll() {
     return prisma.visitor.findMany({
       include: { user: true}
@@ -47,5 +56,13 @@ export const VisitorRepository = {
     });
     
     await UserRepository.delete(cpf);
+  },
+  async entryRecord(visitantId: number, type: EntryRecordType) {
+    await prisma.entryRecord.create({
+      data: {
+        visitorId: visitantId,
+        type: type
+      }
+    });
   }
 };

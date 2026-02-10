@@ -34,6 +34,11 @@ enum ServiceType {
   OTHER
 }
 
+enum EntryRecordType {
+  ENTRY
+  EXIT
+}
+
 //
 // MODELS
 //
@@ -79,6 +84,8 @@ model Visitor {
 
   lotId       Int?
   lot         Lot?     @relation("LotVisitors", fields: [lotId], references: [id])
+
+  entryRecords EntryRecord[]
 
   userCpf     String   @unique
   user        User     @relation(fields: [userCpf], references: [cpf])
@@ -130,4 +137,15 @@ model ServiceRequest {
   targetLot     Lot?          @relation(fields: [targetLotId], references: [id])
 
   createdAt     DateTime      @default(now())
+}
+
+
+model EntryRecord {
+  id            Int       @id @default(autoincrement())
+  timestamp     DateTime  @default(now())
+
+  type          EntryRecordType
+
+  visitorId     Int
+  visitor       Visitor   @relation(fields: [visitorId], references: [id])
 }

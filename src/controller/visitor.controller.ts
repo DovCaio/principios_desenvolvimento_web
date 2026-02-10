@@ -28,5 +28,11 @@ export const VisitorController =  {
         await VisitorService.delete(cpf);
         
         return res.status(204).send();
+    },
+    async entryRecord(req: Request, res: Response) {
+        const { visitantId, type } = req.body
+        await VisitorService.entryRecord(visitantId, type);
+        
+        return res.status(200).send();
     }
 }

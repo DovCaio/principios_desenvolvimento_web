@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { VisitorController } from "../controller/visitor.controller";
+import { authenticate } from "../middleware/auth.middleware";
 
 const useRouter = Router();
 
@@ -110,5 +111,7 @@ useRouter.get("/", VisitorController.getAll);
  */
 useRouter.delete("/:cpf", VisitorController.delete);
 
+
+useRouter.post("/entry-record", authenticate, asyncHandler(VisitorController.entryRecord));
 
 export default useRouter;
