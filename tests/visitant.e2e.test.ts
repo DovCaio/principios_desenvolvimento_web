@@ -201,5 +201,182 @@ describe("Employee Integration Tests", () => {
       expect(entryRecords.length).toBeGreaterThan(1);
       expect(entryRecords[1].type).toBe("EXIT");
     });
+
+    it("should not create an entry record for a non existing visitor", async () => {
+      const entryRecordPayload = {
+        visitantId: 9999,
+        type: "ENTRY",
+      };
+
+      const response = await request(app)
+        .post("/visitor/entry-record")
+        .set("Authorization", `Bearer ${jwt}`)
+        .send(entryRecordPayload);
+
+      expect(response.status).toBe(404);
+
+      const entryRecords = await prisma.entryRecord.findMany({
+        where: {
+          visitorId: 9999,
+        },
+      });
+
+      expect(entryRecords.length).toBe(0);
+      expect(response.body.message).toBe("Usuário não existe.");
+    })
+
+    it("should not create an entry record for a non authenticated user", async () => {
+      const visitantId = visitatsId[0];
+
+      const entryRecordPayload = {
+        visitantId,
+        type: "ENTRY",
+      };
+
+      const response = await request(app)
+        .post("/visitor/entry-record")
+        .send(entryRecordPayload);
+
+      expect(response.status).toBe(401);
+
+      const entryRecords = await prisma.entryRecord.findMany({
+        where: {
+          visitorId: visitantId,
+        },
+      });
+
+      expect(entryRecords.length).toBeGreaterThan(0);
+    });
+
+    it("should not create an entry record for a non authorized user", async () => {
+      const visitantId = visitatsId[0];
+
+      const entryRecordPayload = {
+        visitantId,
+        type: "ENTRY",
+      };
+
+      const response = await request(app)
+        .post("/visitor/entry-record")
+        .set("Authorization", `Bearer invalidtoken`)
+        .send(entryRecordPayload);
+
+      expect(response.status).toBe(401);
+
+      const entryRecords = await prisma.entryRecord.findMany({
+        where: {
+          visitorId: visitantId,
+        },
+      });
+
+      expect(entryRecords.length).toBeGreaterThan(0);
+    });
+
+    it("should not create an entry record with invalid type", async () => {
+      const visitantId = visitatsId[0];
+      
+      const entryRecordPayload = {
+        visitantId,
+        type: "INVALID_TYPE",
+      };
+
+      const response = await request(app)
+        .post("/visitor/entry-record")
+        .set("Authorization", `Bearer ${jwt}`)
+        .send(entryRecordPayload);
+
+      expect(response.status).toBe(400);
+
+      const entryRecords = await prisma.entryRecord.findMany({
+        where: {
+          visitorId: visitantId,
+        },
+      });
+
+      expect(entryRecords.length).toBeGreaterThan(0);
+    });
+
+    it("should not create an entry record with missing fields", async () => {
+      const entryRecordPayload = {
+        type: "ENTRY",
+      };
+
+      const response = await request(app)
+        .post("/visitor/entry-record")
+        .set("Authorization", `Bearer ${jwt}`)
+        .send(entryRecordPayload);
+
+      expect(response.status).toBe(400);
+
+      const entryRecords = await prisma.entryRecord.findMany({
+        where: {
+          visitorId: visitatsId[0],
+        },
+      });
+
+      expect(entryRecords.length).toBeGreaterThan(0);
+    });
+
+    it("should not create an entry record with non numeric visitantId", async () => {
+      const entryRecordPayload = {
+        visitantId: "invalid",
+        type: "ENTRY",
+      };
+
+      const response = await request(app)
+        .post("/visitor/entry-record")
+        .set("Authorization", `Bearer ${jwt}`)
+        .send(entryRecordPayload);
+
+      expect(response.status).toBe(400);
+
+      const entryRecords = await prisma.entryRecord.findMany({
+        where: {
+          visitorId: visitatsId[0],
+        },
+      });
+
+      expect(entryRecords.length).toBeGreaterThan(0);
+    });
+
+    it("should not create an entry record if the visitor has not auhorization to access the resource", async () => {
+      const payload = {
+        cpf: "00055533321",
+        phone: "11988887777",
+        name: "Nolan Smith",
+        password: "SENHAFROtissima112421!",
+        userType: "VISITOR",
+      };
+
+      const visitorResponse = await request(app).post("/visitor").send(payload);
+      const visitantId = visitorResponse.body.id;
+
+      const loginResponse = await request(app).post("/auth/login").send({
+        cpf: payload.cpf,
+        password: payload.password,
+      });
+
+      //const jwt = loginResponse.body.token;
+
+      const entryRecordPayload = {
+        visitantId,
+        type: "ENTRY",
+      };
+
+      const response = await request(app)
+        .post("/visitor/entry-record")
+        .set("Authorization", `Bearer ${jwt}`)
+        .send(entryRecordPayload);
+
+      expect(response.status).toBe(403);
+
+      const entryRecords = await prisma.entryRecord.findMany({
+        where: {
+          visitorId: visitantId,
+        },
+      });
+
+      expect(entryRecords.length).toBe(0);
+    });
   });
 });
