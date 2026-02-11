@@ -18,6 +18,12 @@ export const authLimiter = rateLimit({
     status: 429,
     message: "Muitas tentativas de login incorretas. Tente novamente em 1 hora."
   },
+  keyGenerator : (req) => {
+    if (process.env.NODE_ENV === "test") {
+      return req.headers["x-test-id"] as string || "test-ip";
+    }
+    return req.ip || "unknown-ip";
+  },
   standardHeaders: true,
   legacyHeaders: false,
 });
