@@ -19,6 +19,7 @@ enum UserType {
 enum EmployeeType {
   LeisureAreaEmployee
   GateEmployee
+  ManagementEmployee
 }
 
 enum ServiceStatus {
@@ -33,6 +34,12 @@ enum ServiceType {
   COMMON_AREA
   OTHER
 }
+
+enum AccessStatus {
+  OPEN
+  CLOSED
+}
+
 
 //
 // MODELS
@@ -141,10 +148,6 @@ model ServiceRequest {
 // === NOVAS ADIÇÕES (AO FINAL) ===
 //
 
-enum AccessStatus {
-  OPEN
-  CLOSED
-}
 
 model AccessLog {
   id        Int          @id @default(autoincrement())

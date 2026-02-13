@@ -81,6 +81,42 @@ describe("Employee Integration Tests", () => {
       employee_ids.push(employee!.userCpf);
     });
 
+        it("should create an management employee with linked user", async () => {
+      const payload = {
+        cpf: "12345678901",
+        password: "VERdeCasa2026",
+        phone: "11988887521",
+        name: "Big Smoke",
+        userType: "EMPLOYEE",
+        employee: {
+          employeeType: "ManagementEmployee",
+        },
+      };
+
+      const response = await request(app).post("/employee").send(payload);
+
+      expect(response.status).toBe(201);
+      expect(response.body.user.cpf).toBe(payload.cpf);
+      expect(response.body.employeeType).toBe(
+        payload.employee.employeeType
+      );
+
+      const employee = await prisma.employee.findFirst({
+        where: {
+          user: {
+            cpf: payload.cpf,
+          },
+        },
+        include: { user: true },
+      });
+
+      expect(employee).not.toBeNull();
+      expect(employee?.employeeType).toBe("ManagementEmployee");
+      expect(employee?.user.name).toBe("Big Smoke");
+      employee_ids.push(employee!.userCpf);
+    });
+
+
     it("should return an error when create an employee with linked user and without an password correct", async () => {
       const payload = {
         cpf: "15344433421",
@@ -179,6 +215,40 @@ describe("Employee Integration Tests", () => {
 
       expect(employee).toBeNull();
     });
+  });
+
+  describe("Associations", () => {
+
+      it("should associate an resident to a lot", async () => {
+        const payload = {
+          cpf: "55544433321",
+          password: "CasaVerde2026",
+          phone: "11988887777",
+          name: "Alice Johnson",
+          userType: "EMPLOYEE",
+          employee: {
+            employeeType: "GateEmployee",
+          },
+        };
+
+        await request(app).post("/employee").send(payload);
+
+        const lotPayload = {
+          intercom: "A123",
+        };
+
+        const lotResponse = await request(app).post("/lot").send(lotPayload);
+
+        expect(lotResponse.status).toBe(201);
+
+        const associationResponse = await request(app)
+          .post(`/employee/${payload.cpf}/associate-lot`)
+          .send({ lotId: lotResponse.body.id });
+          
+        expect(associationResponse.status).toBe(200);
+        expect(associationResponse.body.message).toBe("Lot associated successfully");
+      });
+
   });
 });
  
