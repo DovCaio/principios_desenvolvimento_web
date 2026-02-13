@@ -5,8 +5,8 @@ const prisma = new PrismaClient();
 interface CreateSchedulingDto {
   userCpf: string;
   leisureAreaId: number;
-  startTime: string; 
-  endTime: string;   
+  startTime: string;
+  endTime: string;
 }
 
 export const SchedulingService = {
@@ -33,7 +33,6 @@ export const SchedulingService = {
     if (area.openHour && area.closeHour) {
       const startHour = start.getHours();
       const endHour = end.getHours();
-
       const openRule = parseInt(area.openHour.split(":")[0]);
       const closeRule = parseInt(area.closeHour.split(":")[0]);
 
@@ -42,18 +41,32 @@ export const SchedulingService = {
       }
     }
 
-    const conflict = await prisma.scheduling.findFirst({
+    const currentBookingsCount = await prisma.scheduling.count({
       where: {
         leisureAreaId: leisureAreaId,
         AND: [
           { startTime: { lt: end } },
-          { endTime: { gt: start } },
-        ],
-      },
+          { endTime: { gt: start } }
+        ]
+      }
     });
 
-    if (conflict) {
-      throw new Error("Horário indisponível");
+    if (currentBookingsCount >= area.capacity) {
+      throw new Error("Capacidade máxima da área atingida para este horário");
+    }
+
+    const userConflict = await prisma.scheduling.findFirst({
+      where: {
+        userCpf: userCpf,
+        AND: [
+          { startTime: { lt: end } },
+          { endTime: { gt: start } }
+        ]
+      }
+    });
+
+    if (userConflict) {
+      throw new Error("Você já possui um agendamento neste horário");
     }
 
     return await prisma.scheduling.create({
