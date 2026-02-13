@@ -1,8 +1,6 @@
 import request from "supertest";
 import app from "../src/app";
-import prisma from "../src/prisma";
 import { resetDatabase } from "../src/prisma";
-import { authLimiter } from "../src/middleware/rateLimit.middleware";
 
 describe("Employee Integration Tests", () => {
   const gate_employee_payload = {

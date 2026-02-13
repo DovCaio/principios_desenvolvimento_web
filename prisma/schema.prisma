@@ -58,6 +58,8 @@ model User {
 
   schedulings     Scheduling[]
   serviceRequests ServiceRequest[]
+  auditLogs       AuditLog[]
+
 }
 
 model Resident {
@@ -157,4 +159,17 @@ model AccessLog {
 
   visitorId Int
   visitor   Visitor @relation(fields: [visitorId], references: [id])
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  path    String
+  method  String
+  ip      String
+  body    String?
+  status  Int
+  timestamp DateTime @default(now())
+  duration  Int
+  userCpf   String?
+  user      User?     @relation(fields: [userCpf], references: [cpf])
 }

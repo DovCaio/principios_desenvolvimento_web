@@ -3,6 +3,7 @@ import express, { ErrorRequestHandler } from "express";
 import path from "path";
 import { generalLimiter } from "./middleware/rateLimit.middleware"; // <--- Import novo
 import routes from "./routes";
+import { auditMiddleware } from "./middleware/audit.middleware";
 
 dotenv.config();
 
@@ -12,6 +13,8 @@ app.use(express.json());
 
 // Aplica o limite geral em todas as requisições
 app.use(generalLimiter);
+
+app.use(auditMiddleware())
 
 app.use(routes);
 
