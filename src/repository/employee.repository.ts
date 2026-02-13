@@ -69,5 +69,6 @@ export const EmployeeRepository = {
             cpf: cpf,
         },
     });
-  }
+  },
+  
 };

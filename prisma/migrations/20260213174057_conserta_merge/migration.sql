@@ -2,7 +2,7 @@
 CREATE TYPE "UserType" AS ENUM ('RESIDENT', 'VISITOR', 'EMPLOYEE');
 
 -- CreateEnum
-CREATE TYPE "EmployeeType" AS ENUM ('LeisureAreaEmployee', 'GateEmployee');
+CREATE TYPE "EmployeeType" AS ENUM ('LeisureAreaEmployee', 'GateEmployee', 'ManagementEmployee');
 
 -- CreateEnum
 CREATE TYPE "ServiceStatus" AS ENUM ('PENDING', 'IN_PROGRESS', 'COMPLETED');
@@ -113,9 +113,10 @@ CREATE TABLE "AuditLog" (
     "method" TEXT NOT NULL,
     "ip" TEXT NOT NULL,
     "body" TEXT,
+    "status" INTEGER NOT NULL,
     "timestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "duration" INTEGER NOT NULL,
-    "userCpf" TEXT NOT NULL,
+    "userCpf" TEXT,
 
     CONSTRAINT "AuditLog_pkey" PRIMARY KEY ("id")
 );
@@ -169,4 +170,4 @@ ALTER TABLE "ServiceRequest" ADD CONSTRAINT "ServiceRequest_targetLotId_fkey" FO
 ALTER TABLE "AccessLog" ADD CONSTRAINT "AccessLog_visitorId_fkey" FOREIGN KEY ("visitorId") REFERENCES "Visitor"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_userCpf_fkey" FOREIGN KEY ("userCpf") REFERENCES "User"("cpf") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_userCpf_fkey" FOREIGN KEY ("userCpf") REFERENCES "User"("cpf") ON DELETE SET NULL ON UPDATE CASCADE;
