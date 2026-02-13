@@ -146,18 +146,6 @@ model ServiceRequest {
   createdAt  DateTime  @default(now())
   startedAt  DateTime?
   finishedAt DateTime?
-  id          Int           @id @default(autoincrement())
-  description String
-  type        ServiceType
-  status      ServiceStatus @default(PENDING)
-
-  requesterCpf String
-  requester    User   @relation(fields: [requesterCpf], references: [cpf])
-
-  targetLotId Int?
-  targetLot   Lot? @relation(fields: [targetLotId], references: [id])
-
-  createdAt DateTime @default(now())
 }
 
 //
