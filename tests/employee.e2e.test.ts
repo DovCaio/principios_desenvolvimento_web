@@ -239,7 +239,7 @@ describe("Employee Integration Tests", () => {
         expect(associationResponse.body.userCpf).toBe(payload.cpf);
         expect(associationResponse.body.lotId).toBe(lotResponse.body.id);        
       });
-
+    })
   describe("Audit", () => {
     let cpf: string;
 
@@ -355,4 +355,5 @@ describe("Employee Integration Tests", () => {
       expect(lastLog.method).toBe("GET");
     });
   });
+
 });

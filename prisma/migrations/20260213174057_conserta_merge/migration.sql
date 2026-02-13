@@ -106,6 +106,21 @@ CREATE TABLE "AccessLog" (
     CONSTRAINT "AccessLog_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "AuditLog" (
+    "id" SERIAL NOT NULL,
+    "path" TEXT NOT NULL,
+    "method" TEXT NOT NULL,
+    "ip" TEXT NOT NULL,
+    "body" TEXT,
+    "status" INTEGER NOT NULL,
+    "timestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "duration" INTEGER NOT NULL,
+    "userCpf" TEXT,
+
+    CONSTRAINT "AuditLog_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_phone_key" ON "User"("phone");
 
@@ -153,3 +168,6 @@ ALTER TABLE "ServiceRequest" ADD CONSTRAINT "ServiceRequest_targetLotId_fkey" FO
 
 -- AddForeignKey
 ALTER TABLE "AccessLog" ADD CONSTRAINT "AccessLog_visitorId_fkey" FOREIGN KEY ("visitorId") REFERENCES "Visitor"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_userCpf_fkey" FOREIGN KEY ("userCpf") REFERENCES "User"("cpf") ON DELETE SET NULL ON UPDATE CASCADE;
