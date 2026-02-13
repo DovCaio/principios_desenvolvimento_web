@@ -132,18 +132,20 @@ model Scheduling {
 }
 
 model ServiceRequest {
-  id          Int           @id @default(autoincrement())
-  description String
-  type        ServiceType
-  status      ServiceStatus @default(PENDING)
+  id            Int           @id @default(autoincrement())
+  description   String
+  type          ServiceType
+  status        ServiceStatus @default(PENDING)
+  
+  requesterCpf  String
+  requester     User          @relation(fields: [requesterCpf], references: [cpf])
 
-  requesterCpf String
-  requester    User   @relation(fields: [requesterCpf], references: [cpf])
+  targetLotId   Int?
+  targetLot     Lot?          @relation(fields: [targetLotId], references: [id])
 
-  targetLotId Int?
-  targetLot   Lot? @relation(fields: [targetLotId], references: [id])
-
-  createdAt DateTime @default(now())
+  createdAt  DateTime  @default(now())
+  startedAt  DateTime?
+  finishedAt DateTime?
 }
 
 //

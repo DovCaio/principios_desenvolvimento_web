@@ -7,7 +7,6 @@ export const ServiceRequestController = {
         try {
             const { description, type, targetLotId } = req.body;
             
-            // Simulação de autenticação via Header
             const requesterCpf = req.headers['x-user-cpf'] as string;
 
             if (!requesterCpf) {
@@ -40,8 +39,14 @@ export const ServiceRequestController = {
         try {
             const { id } = req.params;
             const { description, type, status, targetLotId } = req.body;
+            
+            const updaterCpf = req.headers['x-user-cpf'] as string;
 
-            const result = await ServiceRequestService.update(Number(id), {
+            if (!updaterCpf) {
+                return res.status(400).json({ error: "CPF obrigatório no header x-user-cpf" });
+            }
+
+            const result = await ServiceRequestService.update(Number(id), updaterCpf, {
                 description,
                 type,
                 status,
@@ -63,5 +68,4 @@ export const ServiceRequestController = {
             return res.status(400).json({ error: error.message });
         }
     }
-    
 };
