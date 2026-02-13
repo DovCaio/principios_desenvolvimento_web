@@ -4,12 +4,28 @@ import prisma from "../src/prisma";
 
 describe("ServiceRequest E2E Tests", () => {
 
-  const mockUser = {
+  const mockResident = {
     cpf: "99988877700",
-    name: "Tester E2E",
+    name: "Tester Resident",
     phone: "11999990000",
-    password: "SEnhaBAsTAte_forte2",
+    password: "Password123",
     userType: "RESIDENT" as const
+  };
+
+  const mockVisitor = {
+    cpf: "11122233344",
+    name: "Tester Visitor",
+    phone: "11999991111",
+    password: "Password123",
+    userType: "VISITOR" as const
+  };
+
+  const mockEmployee = {
+    cpf: "55566677788",
+    name: "Tester Employee",
+    phone: "11999992222",
+    password: "Password123",
+    userType: "EMPLOYEE" as const
   };
 
   const servicePayload = {
@@ -18,42 +34,55 @@ describe("ServiceRequest E2E Tests", () => {
   };
 
   beforeAll(async () => {
-    // Limpeza inicial
     await prisma.serviceRequest.deleteMany();
     await prisma.visitor.deleteMany();
     await prisma.resident.deleteMany();
     await prisma.employee.deleteMany();
-    await prisma.user.deleteMany({ where: { cpf: mockUser.cpf } });
+    await prisma.user.deleteMany({
+      where: { cpf: { in: [mockResident.cpf, mockVisitor.cpf, mockEmployee.cpf] } }
+    });
 
-    // Seed: Cria usuário necessário para a FK
-    await prisma.user.create({ data: mockUser });
+    await prisma.user.createMany({
+      data: [mockResident, mockVisitor, mockEmployee]
+    });
   });
 
   afterAll(async () => {
-    // Limpeza final
     await prisma.serviceRequest.deleteMany();
-    await prisma.user.deleteMany({ where: { cpf: mockUser.cpf } });
+    await prisma.user.deleteMany({
+      where: { cpf: { in: [mockResident.cpf, mockVisitor.cpf, mockEmployee.cpf] } }
+    });
     await prisma.$disconnect();
   });
 
   describe("POST /services", () => {
-    it("should create a service request successfully", async () => {
+    it("should create a service request successfully as RESIDENT", async () => {
       const response = await request(app)
         .post("/services")
-        .set("x-user-cpf", mockUser.cpf)
+        .set("x-user-cpf", mockResident.cpf)
         .send(servicePayload);
 
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty("id");
       expect(response.body.description).toBe(servicePayload.description);
       expect(response.body.status).toBe("PENDING");
-      expect(response.body.requesterCpf).toBe(mockUser.cpf);
+      expect(response.body.requesterCpf).toBe(mockResident.cpf);
+    });
+
+    it("should fail when VISITOR tries to create a service request", async () => {
+      const response = await request(app)
+        .post("/services")
+        .set("x-user-cpf", mockVisitor.cpf)
+        .send(servicePayload);
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe("Apenas moradores e funcionários podem abrir chamados.");
     });
 
     it("should fail when description is missing", async () => {
       const response = await request(app)
         .post("/services")
-        .set("x-user-cpf", mockUser.cpf)
+        .set("x-user-cpf", mockResident.cpf)
         .send({ type: "MAINTENANCE" });
 
       expect(response.status).toBe(400);
@@ -81,31 +110,67 @@ describe("ServiceRequest E2E Tests", () => {
   });
 
   describe("PUT /services/:id", () => {
-    it("should update service status and description", async () => {
+    it("should fail when RESIDENT tries to change status", async () => {
       const newService = await prisma.serviceRequest.create({
         data: {
-          description: "Teste Update Antigo",
+          description: "Teste Trava Morador",
           type: "MAINTENANCE",
-          requesterCpf: mockUser.cpf,
+          requesterCpf: mockResident.cpf,
           status: "PENDING"
         }
       });
 
       const response = await request(app)
         .put(`/services/${newService.id}`)
-        .send({
-          status: "COMPLETED",
-          description: "Teste Update Novo"
-        });
+        .set("x-user-cpf", mockResident.cpf)
+        .send({ status: "IN_PROGRESS" });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe("Apenas funcionários podem alterar o status do chamado.");
+    });
+
+    it("should update status to IN_PROGRESS and set startedAt as EMPLOYEE", async () => {
+      const newService = await prisma.serviceRequest.create({
+        data: {
+          description: "Teste IN_PROGRESS",
+          type: "MAINTENANCE",
+          requesterCpf: mockResident.cpf,
+          status: "PENDING"
+        }
+      });
+
+      const response = await request(app)
+        .put(`/services/${newService.id}`)
+        .set("x-user-cpf", mockEmployee.cpf)
+        .send({ status: "IN_PROGRESS" });
+
+      expect(response.status).toBe(200);
+      expect(response.body.status).toBe("IN_PROGRESS");
+      
+      const updatedDb = await prisma.serviceRequest.findUnique({ where: { id: newService.id } });
+      expect(updatedDb?.startedAt).not.toBeNull();
+    });
+
+    it("should update status to COMPLETED and set finishedAt as EMPLOYEE", async () => {
+      const newService = await prisma.serviceRequest.create({
+        data: {
+          description: "Teste COMPLETED",
+          type: "MAINTENANCE",
+          requesterCpf: mockResident.cpf,
+          status: "IN_PROGRESS"
+        }
+      });
+
+      const response = await request(app)
+        .put(`/services/${newService.id}`)
+        .set("x-user-cpf", mockEmployee.cpf)
+        .send({ status: "COMPLETED" });
 
       expect(response.status).toBe(200);
       expect(response.body.status).toBe("COMPLETED");
-      expect(response.body.description).toBe("Teste Update Novo");
 
-      const updatedDb = await prisma.serviceRequest.findUnique({
-        where: { id: newService.id }
-      });
-      expect(updatedDb?.status).toBe("COMPLETED");
+      const updatedDb = await prisma.serviceRequest.findUnique({ where: { id: newService.id } });
+      expect(updatedDb?.finishedAt).not.toBeNull();
     });
   });
 
@@ -115,7 +180,7 @@ describe("ServiceRequest E2E Tests", () => {
         data: {
           description: "Vou ser deletado",
           type: "OTHER",
-          requesterCpf: mockUser.cpf
+          requesterCpf: mockResident.cpf
         }
       });
 

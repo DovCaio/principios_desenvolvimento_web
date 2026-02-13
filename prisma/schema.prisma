@@ -129,5 +129,7 @@ model ServiceRequest {
   targetLotId   Int?
   targetLot     Lot?          @relation(fields: [targetLotId], references: [id])
 
-  createdAt     DateTime      @default(now())
+  createdAt  DateTime  @default(now())
+  startedAt  DateTime?
+  finishedAt DateTime?
 }

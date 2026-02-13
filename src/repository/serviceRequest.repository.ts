@@ -1,5 +1,4 @@
 import { ServiceRequestCreateDTO } from "../dto/serviceRequest/ServiceRequestCreateDTO";
-import { ServiceRequestPutDTO } from "../dto/serviceRequest/ServiceRequestPutDTO";
 import prisma from "../prisma";
 
 export const ServiceRequestRepository = {
@@ -35,14 +34,16 @@ export const ServiceRequestRepository = {
         });
     },
 
-    async update(id: number, data: ServiceRequestPutDTO) {
+    async update(id: number, data: any) {
         return await prisma.serviceRequest.update({
             where: { id },
             data: {
                 description: data.description,
                 type: data.type,
                 status: data.status,
-                targetLotId: data.targetLotId
+                targetLotId: data.targetLotId,
+                startedAt: data.startedAt,
+                finishedAt: data.finishedAt
             }
         });
     },
