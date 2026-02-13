@@ -8,7 +8,10 @@ export async function resetDatabase() {
     "Employee",
     "Resident",
     "User",
-    "Lot"
+    "Lot",
+    "Scheduling",
+    "ServiceRequest",
+    "AuditLog"
   ];
 
   const truncateQuery = `
@@ -66,5 +69,13 @@ export async function createUserFromPayload(payload: any) {
   return user;
 }
 
+
+export async function saveAudit(audit: any) {
+
+  await prisma.auditLog.create({
+    data: audit,
+  });
+
+}
 
 export default prisma;

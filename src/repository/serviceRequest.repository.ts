@@ -10,7 +10,7 @@ export const ServiceRequestRepository = {
                 description: data.description,
                 type: data.type,
                 requesterCpf: data.requesterCpf,
-                lotId: data.targetLotId,
+                targetLotId: data.targetLotId,
                 status: "PENDING"
             }
         });
@@ -42,7 +42,7 @@ export const ServiceRequestRepository = {
                 description: data.description,
                 type: data.type,
                 status: data.status,
-                lotId: data.targetLotId
+                targetLotId: data.targetLotId
             }
         });
     },
