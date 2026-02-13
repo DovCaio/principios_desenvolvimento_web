@@ -217,7 +217,7 @@ describe("Employee Integration Tests", () => {
     });
   });
 
-  describe("Associations", () => {
+  describe("Manegments Associations", () => {
 
       it("should associate an resident to a lot", async () => {
         const payload = {
@@ -231,7 +231,9 @@ describe("Employee Integration Tests", () => {
           },
         };
 
-        await request(app).post("/employee").send(payload);
+        const manegment = await request(app).post("/resident").send(payload);
+        
+        expect(manegment.status).toBe(201);
 
         const lotPayload = {
           intercom: "A123",
@@ -240,13 +242,13 @@ describe("Employee Integration Tests", () => {
         const lotResponse = await request(app).post("/lot").send(lotPayload);
 
         expect(lotResponse.status).toBe(201);
-
-        const associationResponse = await request(app)
-          .post(`/employee/${payload.cpf}/associate-lot`)
-          .send({ lotId: lotResponse.body.id });
+        
+        const associationResponse = await request(app) //Essa requisição vai precisar de autorização
+          .put(`/employee/associate_resident/${payload.cpf}/lot/${lotResponse.body.id}`);
           
         expect(associationResponse.status).toBe(200);
-        expect(associationResponse.body.message).toBe("Lot associated successfully");
+        expect(associationResponse.body.userCpf).toBe(payload.cpf);
+        expect(associationResponse.body.lotId).toBe(lotResponse.body.id);        
       });
 
   });
