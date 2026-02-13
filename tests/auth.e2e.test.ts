@@ -1,6 +1,5 @@
 import request from "supertest";
 import app from "../src/app";
-import prisma from "../src/prisma";
 import { resetDatabase } from "../src/prisma";
 
 describe("Employee Integration Tests", () => {
@@ -107,13 +106,14 @@ describe("Employee Integration Tests", () => {
   });
 
   describe("resident auth", () => {
+
     it("login with a resident existent", async () => {
       const payload = {
         cpf: resident_payload.cpf,
         password: resident_payload.password,
       };
 
-      const response = await request(app).post("/auth/login").send(payload);
+      const response = await request(app).post("/auth/login").send(payload).set("x-test-id", "1.2.3.1");
 
       expect(response.status).toBe(200);
 
@@ -127,7 +127,7 @@ describe("Employee Integration Tests", () => {
       const response = await request(app).post("/auth/login").send({
         cpf: resident_payload.cpf,
         password: "senha_errada",
-      });
+      }).set("x-test-id", "1.2.3.2");
 
       expect(response.status).toBe(401);
       expect(response.body.message).toBe("As credencias estão erradas.");
@@ -141,7 +141,7 @@ describe("Employee Integration Tests", () => {
         password: visitant_payload.password,
       };
 
-      const response = await request(app).post("/auth/login").send(payload);
+      const response = await request(app).post("/auth/login").send(payload).set("x-test-id", "1.2.3.3");
 
       expect(response.status).toBe(200);
 
@@ -155,7 +155,7 @@ describe("Employee Integration Tests", () => {
       const response = await request(app).post("/auth/login").send({
         cpf: visitant_payload.cpf,
         password: "senha_errada",
-      });
+      }).set("x-test-id", "1.2.3.4");
 
       expect(response.status).toBe(401);
       expect(response.body.message).toBe("As credencias estão erradas.");
@@ -167,7 +167,7 @@ describe("Employee Integration Tests", () => {
       const response = await request(app).post("/auth/login").send({
         cpf: "00000000000",
         password: "senha_errada",
-      });
+      }).set("x-test-id", "1.2.3.5");
 
       expect(response.status).toBe(401);
       expect(response.body.message).toBe("As credencias estão erradas.");
@@ -177,7 +177,7 @@ describe("Employee Integration Tests", () => {
       const response = await request(app).post("/auth/login").send({
         cpf: "11111111111",
         password: gate_employee_payload.password,
-      });
+      }).set("x-test-id", "1.2.3.6");
 
       expect(response.status).toBe(401);
       expect(response.body.message).toBe("As credencias estão erradas.");
@@ -197,7 +197,7 @@ describe("Employee Integration Tests", () => {
       const response = await request(app).post("/auth/login").send({
         cpf: "22222222222",
         password: resident_payload.password,
-      });
+      }).set("x-test-id", "1.2.3.7");
 
       expect(response.status).toBe(401);
       expect(response.body.message).toBe("As credencias estão erradas.");
@@ -207,7 +207,7 @@ describe("Employee Integration Tests", () => {
       const response = await request(app).post("/auth/login").send({
         cpf: "33333333333",
         password: visitant_payload.password,
-      });
+      }).set("x-test-id", "1.2.3.8");
 
       expect(response.status).toBe(401);
       expect(response.body.message).toBe("As credencias estão erradas.");

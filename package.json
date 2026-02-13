@@ -15,7 +15,9 @@
     "test:service": "jest --runInBand --testPathPatterns=tests/serviceRequest.e2e.test.ts",
     "test:visitor": "jest --runInBand --testPathPatterns=tests/visitant.e2e.test.ts",
     "test:leisure": "jest --runInBand --testPathPatterns=tests/leisureArea.e2e.test.ts",
-    "test:auth": "jest --runInBand --testPathPatterns=tests/auth.e2e.test.ts"
+    "test:auth": "jest --runInBand --testPathPatterns=tests/auth.e2e.test.ts",
+    "test:scheduling": "jest --runInBand --testPathPatterns=tests/scheduling.e2e.test.ts",
+    "test:access": "jest --runInBand --testPathPatterns=tests/access.e2e.test.ts"
   },
   "repository": {
     "type": "git",
@@ -35,6 +37,7 @@
     "class-validator": "^0.14.3",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
     "install": "^0.13.0",
     "jsonwebtoken": "^9.0.3",
     "npm": "^11.6.4",
@@ -44,6 +47,7 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/express": "^5.0.6",
+    "@types/express-rate-limit": "^6.0.2",
     "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.10.1",
@@ -53,7 +57,7 @@
     "jest": "^30.2.0",
     "prisma": "^5.22.0",
     "supertest": "^7.1.4",
-    "ts-jest": "^29.4.5",
+    "ts-jest": "^29.4.6",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"
   }

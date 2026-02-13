@@ -98,5 +98,7 @@ useRouter.get("/:cpf", EmployeeController.get);
  */
 useRouter.delete("/:cpf", EmployeeController.delete);
 
+useRouter.put("/associate_resident/:cpf/lot/:lotId", EmployeeController.associateResidentLot);
+
 
 export default useRouter;

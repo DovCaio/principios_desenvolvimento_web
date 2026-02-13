@@ -19,6 +19,7 @@ enum UserType {
 enum EmployeeType {
   LeisureAreaEmployee
   GateEmployee
+  ManagementEmployee
 }
 
 enum ServiceStatus {
@@ -34,85 +35,98 @@ enum ServiceType {
   OTHER
 }
 
+enum AccessStatus {
+  OPEN
+  CLOSED
+}
+
+
 //
 // MODELS
 //
 
 model User {
-  cpf         String    @id
-  password    String    
-  phone       String    @unique
-  name        String
-  userType    UserType
+  cpf      String   @id
+  password String
+  phone    String   @unique
+  name     String
+  userType UserType
 
-  resident    Resident?
-  employee    Employee?
-  visitor     Visitor?
+  resident Resident?
+  employee Employee?
+  visitor  Visitor?
 
   schedulings     Scheduling[]
   serviceRequests ServiceRequest[]
+  auditLogs       AuditLog[]
+
 }
 
 model Resident {
-  id            Int     @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-  lotId         Int?
-  lot           Lot?    @relation("LotResidents", fields: [lotId], references: [id])
+  lotId Int?
+  lot   Lot? @relation("LotResidents", fields: [lotId], references: [id])
 
-  responsibleFor Lot?     @relation("LotResponsible")
+  responsibleFor Lot? @relation("LotResponsible")
 
-  userCpf       String  @unique
-  user          User    @relation(fields: [userCpf], references: [cpf])
+  userCpf String @unique
+  user    User   @relation(fields: [userCpf], references: [cpf])
 }
 
 model Employee {
-  id            Int          @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-  employeeType  EmployeeType
+  employeeType EmployeeType
 
-  userCpf       String       @unique
-  user          User         @relation(fields: [userCpf], references: [cpf])
+  userCpf String @unique
+  user    User   @relation(fields: [userCpf], references: [cpf])
 }
 
+// === ALTERAÇÃO AQUI ===
+// O Visitor só pode existir uma vez. Adicionei a linha 'accessLogs' aqui.
 model Visitor {
-  id          Int      @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-  lotId       Int?
-  lot         Lot?     @relation("LotVisitors", fields: [lotId], references: [id])
+  lotId Int?
+  lot   Lot? @relation("LotVisitors", fields: [lotId], references: [id])
 
-  userCpf     String   @unique
-  user        User     @relation(fields: [userCpf], references: [cpf])
+  userCpf String @unique
+  user    User   @relation(fields: [userCpf], references: [cpf])
+
+  accessLogs AccessLog[] // Campo novo adicionado na estrutura existente
 }
 
 model Lot {
-  id            Int       @id @default(autoincrement())
-  intercom      String
+  id       Int    @id @default(autoincrement())
+  intercom String
 
-  responsibleId Int?       @unique
-  responsible   Resident?  @relation("LotResponsible", fields: [responsibleId], references: [id])
+  responsibleId Int?      @unique
+  responsible   Resident? @relation("LotResponsible", fields: [responsibleId], references: [id])
 
-  residents     Resident[] @relation("LotResidents")
-  visitors      Visitor[]  @relation("LotVisitors")
-  
+  residents Resident[] @relation("LotResidents")
+  visitors  Visitor[]  @relation("LotVisitors")
+
   serviceRequests ServiceRequest[]
 }
 
 model LeisureArea {
-  id           Int          @id @default(autoincrement())
-  name         String       
-  capacity     Int
-  
-  schedulings  Scheduling[] 
+  id          Int          @id @default(autoincrement())
+  name        String
+  capacity    Int
+  openHour    String?
+  closeHour   String?
+  schedulings Scheduling[]
 }
 
 model Scheduling {
-  id            Int         @id @default(autoincrement())
-  startTime     DateTime
-  endTime       DateTime
-  
-  userCpf       String
-  user          User        @relation(fields: [userCpf], references: [cpf])
-  
+  id        Int      @id @default(autoincrement())
+  startTime DateTime
+  endTime   DateTime
+
+  userCpf String
+  user    User   @relation(fields: [userCpf], references: [cpf])
+
   leisureAreaId Int
   leisureArea   LeisureArea @relation(fields: [leisureAreaId], references: [id])
 }
@@ -132,4 +146,44 @@ model ServiceRequest {
   createdAt  DateTime  @default(now())
   startedAt  DateTime?
   finishedAt DateTime?
+  id          Int           @id @default(autoincrement())
+  description String
+  type        ServiceType
+  status      ServiceStatus @default(PENDING)
+
+  requesterCpf String
+  requester    User   @relation(fields: [requesterCpf], references: [cpf])
+
+  targetLotId Int?
+  targetLot   Lot? @relation(fields: [targetLotId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+//
+// === NOVAS ADIÇÕES (AO FINAL) ===
+//
+
+
+model AccessLog {
+  id        Int          @id @default(autoincrement())
+  entryTime DateTime     @default(now())
+  exitTime  DateTime?
+  status    AccessStatus @default(OPEN)
+
+  visitorId Int
+  visitor   Visitor @relation(fields: [visitorId], references: [id])
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  path    String
+  method  String
+  ip      String
+  body    String?
+  status  Int
+  timestamp DateTime @default(now())
+  duration  Int
+  userCpf   String?
+  user      User?     @relation(fields: [userCpf], references: [cpf])
 }

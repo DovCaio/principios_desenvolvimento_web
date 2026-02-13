@@ -22,4 +22,9 @@ export const EmployeeController = {
     await EmployeeService.delete(cpf);
     return res.status(204).send();
   },
+  async associateResidentLot(req: Request, res: Response) {
+    const { cpf, lotId } = req.params;
+    const resident = await EmployeeService.associateResidentLot(cpf, parseInt(lotId));
+    return res.status(200).json(resident);
+  }
 };

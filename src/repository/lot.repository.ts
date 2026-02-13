@@ -28,6 +28,31 @@ export const LotRepository = {
         await prisma.lot.delete({
             where: { id }
         });
-    }
+    },
+    async getResidentByCpfInLot(lotId: number, cpf: string) {
+        return prisma.user.findFirst({
+            where: {
+                cpf,
+                resident : {
+                    lot: {
+                        id: lotId
+                    }
+                }
+            }
+        });
+    },
+    async associateResidentLot(cpf: string, lotId: number) { //Seria uma boa colocar isso daqui em residente repository?
+    return prisma.resident.update({
+        where: {
+            userCpf: cpf,
+        },
+        data: {
+            lot: {
+                connect: { id: lotId }
+            }
+        },
+        include: { user: true, lot: true }
+    });
+  }
 
 }
