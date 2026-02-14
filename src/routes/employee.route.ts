@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { EmployeeController } from "../controller/employee.controller";
 import { authenticate } from "../middleware/auth.middleware";
+import { authorizationEmployeeManagment } from "../middleware/authorization.middleware";
 
 const useRouter = Router();
 
@@ -99,8 +100,8 @@ useRouter.get("/:cpf", EmployeeController.get);
  */
 useRouter.delete("/:cpf", EmployeeController.delete);
 
-useRouter.put("/associate_resident/:cpf/lot/:lotId", authenticate,  EmployeeController.associateResidentLot);
+useRouter.put("/associate_resident/:cpf/lot/:lotId", authenticate, authorizationEmployeeManagment,  EmployeeController.associateResidentLot);
 
-useRouter.delete("/dessociate_resident/:cpf/lot/:lotId", authenticate, EmployeeController.dessociateResidentLot);
+useRouter.delete("/dessociate_resident/:cpf/lot/:lotId", authenticate, authorizationEmployeeManagment, EmployeeController.dessociateResidentLot);
 
 export default useRouter;
