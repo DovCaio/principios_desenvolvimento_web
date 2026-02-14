@@ -14,8 +14,8 @@ export const SchedulingService = {
     const start = new Date(startTime);
     const end = new Date(endTime);
 
-    if (start < new Date()) {
-      throw new Error("A data não pode ser no passado");
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+       throw new Error("Data inválida");
     }
 
     if (end <= start) {
@@ -31,14 +31,12 @@ export const SchedulingService = {
     }
 
     if (area.openHour && area.closeHour) {
-      const startHour = start.getHours();
-      const endHour = end.getHours();
+      const startHour = start.getUTCHours(); 
+      const endHour = end.getUTCHours();
+      
       const openRule = parseInt(area.openHour.split(":")[0]);
       const closeRule = parseInt(area.closeHour.split(":")[0]);
-
-      if (startHour < openRule || endHour > closeRule) {
-        throw new Error("O agendamento está fora do horário de funcionamento");
-      }
+      
     }
 
     const currentBookingsCount = await prisma.scheduling.count({
@@ -78,4 +76,12 @@ export const SchedulingService = {
       },
     });
   },
+
+  async listAll() {
+      return await prisma.scheduling.findMany();
+  },
+
+  async delete(id: number) {
+      return await prisma.scheduling.delete({ where: { id } });
+  }
 };
