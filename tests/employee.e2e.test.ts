@@ -342,7 +342,7 @@ describe("Employee Integration Tests", () => {
           })
           .set("x-test-id", "1.2.3.10");
         const associationResponse = await request(app)
-          .put(`/employee/associate_resident/invalid_cpf/lot/1`)
+          .put(`/employee/associate_resident/invalid_cpf/lot/${lotId}`)
           .set("Authorization", `Bearer ${token.body.token}`)
           .set("x-test-id", "1.2.3.10");
 
@@ -350,7 +350,7 @@ describe("Employee Integration Tests", () => {
       });
     });
 
-    it("should not associate an resident to a lot with user without permission", async () => {
+    it("should not associate an resident to a lot with user without permission", async () => { //todos os outros usuário além do employee de gestão deveriam conseguir acessar esse endpoint
       const payload = {
         cpf: "111544433323",
         password: "CasaVerde2026",
@@ -385,7 +385,7 @@ describe("Employee Integration Tests", () => {
     });
 
     describe("Dessassociate Resident to Lot", () => {
-      it("should dessociate an resident to a lot", async () => {
+      it("should dessociate an resident to a lot", async () => { //Faltam mais tests para os outros casos, como usuário sem permissão, resident ou lot inválido, etc
         const dessociationResponse = await request(app)
           .delete(`/employee/dessociate_resident/${residentPayload.cpf}/lot/${lotId}`)
           .set("Authorization", `Bearer ${token}`)
@@ -405,6 +405,28 @@ describe("Employee Integration Tests", () => {
         expect(association).toBeNull();
       });
     });
+
+    describe("Associate Resident to responsible for the lot", () => {
+
+        it("should associate an resident to responsible for the lot", async () => {
+          const associationResponse = await request(app)
+            .put(`/employee/make_responsible_resident/${residentPayload.cpf}/lot/${lotId}`)
+            .set("Authorization", `Bearer ${token}`)
+            .set("x-test-id", "1.2.3.11");
+            
+          console.log(associationResponse.body);
+
+          expect(associationResponse.status).toBe(200);
+          const lot = await prisma.lot.findFirst({
+            where: {
+              id: lotId,
+            },
+          });
+
+          expect(lot?.responsibleId).toBe(associationResponse.body.id);
+        })
+
+    })
   });
 
   describe("Audit", () => {

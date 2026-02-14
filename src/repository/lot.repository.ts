@@ -65,4 +65,20 @@ export const LotRepository = {
       }
     });
   },
+  async associateResidentLotResponsible(cpf: string, lotId: number) {
+    return prisma.resident.update({
+      where: {
+        userCpf: cpf,
+      },
+      data: {
+        lot: {
+          connect: { id: lotId },
+        },
+        responsibleFor: {
+          connect: { id: lotId },
+        },
+      },
+      include: { user: true, lot: true, responsibleFor: true },
+    });
+  }
 };
