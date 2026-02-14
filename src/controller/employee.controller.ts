@@ -26,5 +26,20 @@ export const EmployeeController = {
     const { cpf, lotId } = req.params;
     const resident = await EmployeeService.associateResidentLot(cpf, parseInt(lotId));
     return res.status(200).json(resident);
+  },
+  async dessociateResidentLot(req: Request, res: Response) {
+    const { cpf, lotId } = req.params;
+    await EmployeeService.dessociateResidentLot(cpf, parseInt(lotId));
+    return res.status(204).send();
+  },
+  async associateResidentLotResponsible(req: Request, res: Response) {
+    const { cpf, lotId } = req.params;
+    const responsible = await EmployeeService.associateResidentLotResponsible(cpf, parseInt(lotId));
+    return res.status(200).json(responsible);
+  },
+  async unmakeResponsibleResidentLot(req: Request, res: Response) {
+    const { cpf, lotId } = req.params;
+    await EmployeeService.unmakeResponsibleResidentLot(cpf, parseInt(lotId));
+    return res.status(204).send();
   }
 };
