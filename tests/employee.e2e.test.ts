@@ -77,7 +77,7 @@ describe("Employee Integration Tests", () => {
       employee_ids.push(employee!.userCpf);
     });
 
-        it("should create an management employee with linked user", async () => {
+    it("should create an management employee with linked user", async () => {
       const payload = {
         cpf: "12345678901",
         password: "VERdeCasa2026",
@@ -93,9 +93,7 @@ describe("Employee Integration Tests", () => {
 
       expect(response.status).toBe(201);
       expect(response.body.user.cpf).toBe(payload.cpf);
-      expect(response.body.employeeType).toBe(
-        payload.employee.employeeType
-      );
+      expect(response.body.employeeType).toBe(payload.employee.employeeType);
 
       const employee = await prisma.employee.findFirst({
         where: {
@@ -111,7 +109,6 @@ describe("Employee Integration Tests", () => {
       expect(employee?.user.name).toBe("Big Smoke");
       employee_ids.push(employee!.userCpf);
     });
-
 
     it("should return an error when create an employee with linked user and without an password correct", async () => {
       const payload = {
@@ -207,10 +204,10 @@ describe("Employee Integration Tests", () => {
   });
 
   describe("Manegments Associations", () => {
-
+    describe("Associate Resident to Lot", () => {
       it("should associate an resident to a lot", async () => {
         const payload = {
-          cpf: "55544433321",
+          cpf: "111544433321",
           password: "CasaVerde2026",
           phone: "11988887777",
           name: "Alice Johnson",
@@ -220,140 +217,213 @@ describe("Employee Integration Tests", () => {
           },
         };
 
-        const manegment = await request(app).post("/resident").send(payload);
-        
+        const manegment = await request(app)
+          .post("/resident")
+          .send(payload)
+          .set("x-test-id", "1.2.3.10");
+
         expect(manegment.status).toBe(201);
 
         const lotPayload = {
           intercom: "A123",
         };
 
-        const lotResponse = await request(app).post("/lot").send(lotPayload);
+        const lotResponse = await request(app)
+          .post("/lot")
+          .send(lotPayload)
+          .set("x-test-id", "1.2.3.10");
 
         expect(lotResponse.status).toBe(201);
-        
-        const associationResponse = await request(app) //Essa requisição vai precisar de autorização
-          .put(`/employee/associate_resident/${payload.cpf}/lot/${lotResponse.body.id}`);
-          
+
+        const token = await request(app)
+          .post("/auth/login")
+          .send({
+            cpf: payload.cpf,
+            password: payload.password,
+          })
+          .set("x-test-id", "1.2.3.10");
+
+        const associationResponse = await request(app)
+          .put(
+            `/employee/associate_resident/${payload.cpf}/lot/${lotResponse.body.id}`,
+          )
+          .set("Authorization", `Bearer ${token.body.token}`)
+          .set("x-test-id", "1.2.3.10");
+
         expect(associationResponse.status).toBe(200);
         expect(associationResponse.body.userCpf).toBe(payload.cpf);
-        expect(associationResponse.body.lotId).toBe(lotResponse.body.id);        
-      });
-    })
-  describe("Audit", () => {
-    let cpf: string;
-
-    it("should create an audit log when create an employee", async () => {
-      const payload = {
-        cpf: "21344453321",
-        phone: "11988887111",
-        name: "Diana Prince",
-        password: "SENHAFROtissima112421!",
-        userType: "EMPLOYEE",
-        employee: {
-          employeeType: "LeisureAreaEmployee",
-        },
-      };
-
-      const response = await request(app).post("/employee").send(payload);
-
-      expect(response.status).toBe(201);
-
-      await new Promise((r) => setTimeout(r, 100)); //Sem isso os testes falham, o middleware somente executa quando a requisição termina
-
-      const auditLog = await prisma.auditLog.findMany({
-        where: {
-          path: "/employee",
-          method: "POST",
-        },
+        expect(associationResponse.body.lotId).toBe(lotResponse.body.id);
       });
 
-      expect(auditLog.length).toBeGreaterThan(0);
-      const lastLog = auditLog[auditLog.length - 1];
-      expect(lastLog.path).toBe("/employee");
-      expect(lastLog.method).toBe("POST");
-      expect(lastLog.status).toBe(201);
-      expect(lastLog.body).toBe(JSON.stringify(payload));
+      it("should not associate an resident to a lot without loged", async () => {
+        const associationResponse = await request(app)
+          .put(`/employee/associate_resident/invalid_cpf/lot/1`)
+          .set("x-test-id", "1.2.3.10");
+        expect(associationResponse.status).toBe(401);
+      });
+
+      it("should not associate an resident to a lot with invalid lot", async () => {
+        const payload = {
+          cpf: "111544433322",
+          password: "CasaVerde2026",
+          phone: "11988887778",
+          name: "Bob Johnson",
+          userType: "EMPLOYEE",
+          employee: {
+            employeeType: "GateEmployee",
+          },
+        };
+
+        const manegment = await request(app)
+          .post("/resident")
+          .send(payload)
+          .set("x-test-id", "1.2.3.10");
+
+        expect(manegment.status).toBe(201);
+
+        const token = await request(app)
+          .post("/auth/login")
+          .send({
+            cpf: payload.cpf,
+            password: payload.password,
+          })
+          .set("x-test-id", "1.2.3.10");
+
+        const associationResponse = await request(app)
+          .put(`/employee/associate_resident/${payload.cpf}/lot/99999`)
+          .set("Authorization", `Bearer ${token.body.token}`)
+          .set("x-test-id", "1.2.3.10");
+
+        expect(associationResponse.status).toBe(404);
+      });
+
+      it("should not associate an resident to a lot with invalid resident", async () => {
+        const token = await request(app)
+          .post("/auth/login")
+          .send({
+            cpf: "111544433322",
+            password: "CasaVerde2026",
+          })
+          .set("x-test-id", "1.2.3.10");
+        const associationResponse = await request(app)
+          .put(`/employee/associate_resident/invalid_cpf/lot/1`)
+          .set("Authorization", `Bearer ${token.body.token}`)
+          .set("x-test-id", "1.2.3.10");
+
+        expect(associationResponse.status).toBe(404);
+      });
     });
 
-    it("should create an audit log when update an employee", async () => {
-      const payload = {
-        cpf: "21344453321",
-        phone: "11988887222",
-        name: "Bruce Wayne",
-        password: "SENHAFROtissima112421!",
-        userType: "EMPLOYEE",
-        employee: {
-          employeeType: "GateEmployee",
-        },
-      };
+    describe("Audit", () => {
+      let cpf: string;
 
-      const response = await request(app)
-        .put(`/employee/${payload.cpf}`)
-        .send(payload);
+      it("should create an audit log when create an employee", async () => {
+        const payload = {
+          cpf: "21344453321",
+          phone: "11988887111",
+          name: "Diana Prince",
+          password: "SENHAFROtissima112421!",
+          userType: "EMPLOYEE",
+          employee: {
+            employeeType: "LeisureAreaEmployee",
+          },
+        };
 
-      expect(response.status).toBe(200);
+        const response = await request(app).post("/employee").send(payload);
 
-      await new Promise((r) => setTimeout(r, 100)); //Sem isso os testes falham, o middleware somente executa quando a requisição termina
+        expect(response.status).toBe(201);
 
-      const auditLog = await prisma.auditLog.findMany({
-        where: {
-          path: `/employee/${payload.cpf}`,
-          method: "PUT",
-        },
+        await new Promise((r) => setTimeout(r, 100)); //Sem isso os testes falham, o middleware somente executa quando a requisição termina
+
+        const auditLog = await prisma.auditLog.findMany({
+          where: {
+            path: "/employee",
+            method: "POST",
+          },
+        });
+
+        expect(auditLog.length).toBeGreaterThan(0);
+        const lastLog = auditLog[auditLog.length - 1];
+        expect(lastLog.path).toBe("/employee");
+        expect(lastLog.method).toBe("POST");
+        expect(lastLog.status).toBe(201);
+        expect(lastLog.body).toBe(JSON.stringify(payload));
       });
 
-      expect(auditLog.length).toBeGreaterThan(0);
-      const lastLog = auditLog[auditLog.length - 1];
-      expect(lastLog.path).toBe(`/employee/${payload.cpf}`);
-      expect(lastLog.method).toBe("PUT");
-      expect(lastLog.status).toBe(200);
-      expect(lastLog.body).toBe(JSON.stringify(payload));
-    });
+      it("should create an audit log when update an employee", async () => {
+        const payload = {
+          cpf: "21344453321",
+          phone: "11988887222",
+          name: "Bruce Wayne",
+          password: "SENHAFROtissima112421!",
+          userType: "EMPLOYEE",
+          employee: {
+            employeeType: "GateEmployee",
+          },
+        };
 
-    it("should create an audit log when delete an employee", async () => {
-      const response = await request(app).delete(
-        `/employee/21344453321`,
-      );
+        const response = await request(app)
+          .put(`/employee/${payload.cpf}`)
+          .send(payload);
 
-      expect(response.status).toBe(204);
+        expect(response.status).toBe(200);
 
-      await new Promise((r) => setTimeout(r, 100)); //Sem isso os testes falham, o middleware somente executa quando a requisição termina
+        await new Promise((r) => setTimeout(r, 100)); //Sem isso os testes falham, o middleware somente executa quando a requisição termina
 
-      const auditLog = await prisma.auditLog.findMany({
-        where: {
-          path: "/employee/21344453321",
-          method: "DELETE",
-        },
+        const auditLog = await prisma.auditLog.findMany({
+          where: {
+            path: `/employee/${payload.cpf}`,
+            method: "PUT",
+          },
+        });
+
+        expect(auditLog.length).toBeGreaterThan(0);
+        const lastLog = auditLog[auditLog.length - 1];
+        expect(lastLog.path).toBe(`/employee/${payload.cpf}`);
+        expect(lastLog.method).toBe("PUT");
+        expect(lastLog.status).toBe(200);
+        expect(lastLog.body).toBe(JSON.stringify(payload));
       });
 
-      expect(auditLog.length).toBeGreaterThan(0);
-      const lastLog = auditLog[auditLog.length - 1];
-      expect(lastLog.path).toBe("/employee/21344453321");
-      expect(lastLog.method).toBe("DELETE");
-    });
+      it("should create an audit log when delete an employee", async () => {
+        const response = await request(app).delete(`/employee/21344453321`);
 
-    it("should create an audit log when get an employee", async () => {
-      const response = await request(app).get(
-        `/employee/21344453321`,
-      );
+        expect(response.status).toBe(204);
 
-      expect(response.status).toBe(200);
+        await new Promise((r) => setTimeout(r, 100)); //Sem isso os testes falham, o middleware somente executa quando a requisição termina
 
-      await new Promise((r) => setTimeout(r, 100)); //Sem isso os testes falham, o middleware somente executa quando a requisição termina
+        const auditLog = await prisma.auditLog.findMany({
+          where: {
+            path: "/employee/21344453321",
+            method: "DELETE",
+          },
+        });
 
-      const auditLog = await prisma.auditLog.findMany({
-        where: {
-          path: "/employee/21344453321",
-          method: "GET",
-        },
+        expect(auditLog.length).toBeGreaterThan(0);
+        const lastLog = auditLog[auditLog.length - 1];
+        expect(lastLog.path).toBe("/employee/21344453321");
+        expect(lastLog.method).toBe("DELETE");
       });
 
-      expect(auditLog.length).toBeGreaterThan(0);
-      const lastLog = auditLog[auditLog.length - 1];
-      expect(lastLog.path).toBe("/employee/21344453321");
-      expect(lastLog.method).toBe("GET");
+      it("should create an audit log when get an employee", async () => {
+        const response = await request(app).get(`/employee/21344453321`);
+
+        expect(response.status).toBe(200);
+
+        await new Promise((r) => setTimeout(r, 100)); //Sem isso os testes falham, o middleware somente executa quando a requisição termina
+
+        const auditLog = await prisma.auditLog.findMany({
+          where: {
+            path: "/employee/21344453321",
+            method: "GET",
+          },
+        });
+
+        expect(auditLog.length).toBeGreaterThan(0);
+        const lastLog = auditLog[auditLog.length - 1];
+        expect(lastLog.path).toBe("/employee/21344453321");
+        expect(lastLog.method).toBe("GET");
+      });
     });
   });
-
 });
