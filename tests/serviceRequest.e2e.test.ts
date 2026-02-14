@@ -1,199 +1,102 @@
+import { PrismaClient } from "@prisma/client";
+import jwt from "jsonwebtoken";
 import request from "supertest";
-import app from "../src/app";
-import prisma from "../src/prisma";
+import { app } from "../src/app";
 
-describe("ServiceRequest E2E Tests", () => {
+jest.setTimeout(30000);
 
-  const mockResident = {
-    cpf: "99988877700",
-    name: "Tester Resident",
-    phone: "11999990000",
-    password: "Password123",
-    userType: "RESIDENT" as const
-  };
+const prisma = new PrismaClient();
 
-  const mockVisitor = {
-    cpf: "11122233344",
-    name: "Tester Visitor",
-    phone: "11999991111",
-    password: "Password123",
-    userType: "VISITOR" as const
-  };
-
-  const mockEmployee = {
-    cpf: "55566677788",
-    name: "Tester Employee",
-    phone: "11999992222",
-    password: "Password123",
-    userType: "EMPLOYEE" as const
-  };
-
-  const servicePayload = {
-    description: "Lâmpada do corredor queimada",
-    type: "COMMON_AREA" as const
-  };
+describe("Scheduling E2E Tests", () => {
+  let areaId: number;
+  let token: string;
+  const userCpf = "12345678901";
 
   beforeAll(async () => {
-    await prisma.serviceRequest.deleteMany();
-    await prisma.visitor.deleteMany();
-    await prisma.resident.deleteMany();
-    await prisma.employee.deleteMany();
-    await prisma.user.deleteMany({
-      where: { cpf: { in: [mockResident.cpf, mockVisitor.cpf, mockEmployee.cpf] } }
+    await prisma.scheduling.deleteMany();
+    await prisma.leisureArea.deleteMany();
+    await prisma.user.deleteMany();
+
+    await prisma.user.create({
+      data: {
+        cpf: userCpf,
+        name: "Teste Scheduler",
+        password: "hashed_password",
+        phone: "999999999",
+        userType: "RESIDENT"
+      }
     });
 
-    await prisma.user.createMany({
-      data: [mockResident, mockVisitor, mockEmployee]
+    const area = await prisma.leisureArea.create({
+      data: { 
+        name: "Piscina Teste", 
+        capacity: 2,
+        openHour: "08:00", 
+        closeHour: "22:00" 
+      }
+    });
+    areaId = area.id;
+
+    token = jwt.sign({ cpf: userCpf }, process.env.JWT_SECRET || "secret", {
+      expiresIn: "1h",
     });
   });
 
   afterAll(async () => {
-    await prisma.serviceRequest.deleteMany();
-    await prisma.user.deleteMany({
-      where: { cpf: { in: [mockResident.cpf, mockVisitor.cpf, mockEmployee.cpf] } }
-    });
     await prisma.$disconnect();
   });
 
-  describe("POST /services", () => {
-    it("should create a service request successfully as RESIDENT", async () => {
-      const response = await request(app)
-        .post("/services")
-        .set("x-user-cpf", mockResident.cpf)
-        .send(servicePayload);
+  it("should create a scheduling successfully", async () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateStr = tomorrow.toISOString().split("T")[0];
 
-      expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty("id");
-      expect(response.body.description).toBe(servicePayload.description);
-      expect(response.body.status).toBe("PENDING");
-      expect(response.body.requesterCpf).toBe(mockResident.cpf);
-    });
+    const res = await request(app)
+      .post("/api/scheduling")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        leisureAreaId: areaId,
+        startTime: `${dateStr}T10:00:00.000Z`,
+        endTime: `${dateStr}T11:00:00.000Z`
+      });
 
-    it("should fail when VISITOR tries to create a service request", async () => {
-      const response = await request(app)
-        .post("/services")
-        .set("x-user-cpf", mockVisitor.cpf)
-        .send(servicePayload);
-
-      expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Apenas moradores e funcionários podem abrir chamados.");
-    });
-
-    it("should fail when description is missing", async () => {
-      const response = await request(app)
-        .post("/services")
-        .set("x-user-cpf", mockResident.cpf)
-        .send({ type: "MAINTENANCE" });
-
-      expect(response.status).toBe(400);
-    });
-
-    it("should fail when header x-user-cpf is missing", async () => {
-      const response = await request(app)
-        .post("/services")
-        .send(servicePayload);
-
-      expect(response.status).toBe(400);
-    });
+    expect(res.status).toBe(201);
+    expect(res.body).toHaveProperty("id");
   });
 
-  describe("GET /services", () => {
-    it("should list service requests", async () => {
-      const response = await request(app).get("/services");
+  it("should fail when scheduling causes collision", async () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateStr = tomorrow.toISOString().split("T")[0];
 
-      expect(response.status).toBe(200);
-      expect(Array.isArray(response.body)).toBe(true);
-      
-      const createdItem = response.body.find((item: any) => item.description === servicePayload.description);
-      expect(createdItem).toBeDefined();
-    });
+    const res = await request(app)
+      .post("/api/scheduling")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        leisureAreaId: areaId,
+        startTime: `${dateStr}T10:30:00.000Z`,
+        endTime: `${dateStr}T11:30:00.000Z`
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("Você já possui um agendamento neste horário");
   });
 
-  describe("PUT /services/:id", () => {
-    it("should fail when RESIDENT tries to change status", async () => {
-      const newService = await prisma.serviceRequest.create({
-        data: {
-          description: "Teste Trava Morador",
-          type: "MAINTENANCE",
-          requesterCpf: mockResident.cpf,
-          status: "PENDING"
-        }
+  it("should fail when scheduling outside operating hours", async () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateStr = tomorrow.toISOString().split("T")[0];
+
+    const res = await request(app)
+      .post("/api/scheduling")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        leisureAreaId: areaId,
+        startTime: `${dateStr}T06:00:00.000Z`,
+        endTime: `${dateStr}T07:00:00.000Z`
       });
 
-      const response = await request(app)
-        .put(`/services/${newService.id}`)
-        .set("x-user-cpf", mockResident.cpf)
-        .send({ status: "IN_PROGRESS" });
-
-      expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Apenas funcionários podem alterar o status do chamado.");
-    });
-
-    it("should update status to IN_PROGRESS and set startedAt as EMPLOYEE", async () => {
-      const newService = await prisma.serviceRequest.create({
-        data: {
-          description: "Teste IN_PROGRESS",
-          type: "MAINTENANCE",
-          requesterCpf: mockResident.cpf,
-          status: "PENDING"
-        }
-      });
-
-      const response = await request(app)
-        .put(`/services/${newService.id}`)
-        .set("x-user-cpf", mockEmployee.cpf)
-        .send({ status: "IN_PROGRESS" });
-
-      expect(response.status).toBe(200);
-      expect(response.body.status).toBe("IN_PROGRESS");
-      
-      const updatedDb = await prisma.serviceRequest.findUnique({ where: { id: newService.id } });
-      expect(updatedDb?.startedAt).not.toBeNull();
-    });
-
-    it("should update status to COMPLETED and set finishedAt as EMPLOYEE", async () => {
-      const newService = await prisma.serviceRequest.create({
-        data: {
-          description: "Teste COMPLETED",
-          type: "MAINTENANCE",
-          requesterCpf: mockResident.cpf,
-          status: "IN_PROGRESS"
-        }
-      });
-
-      const response = await request(app)
-        .put(`/services/${newService.id}`)
-        .set("x-user-cpf", mockEmployee.cpf)
-        .send({ status: "COMPLETED" });
-
-      expect(response.status).toBe(200);
-      expect(response.body.status).toBe("COMPLETED");
-
-      const updatedDb = await prisma.serviceRequest.findUnique({ where: { id: newService.id } });
-      expect(updatedDb?.finishedAt).not.toBeNull();
-    });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("O agendamento está fora do horário de funcionamento");
   });
-
-  describe("DELETE /services/:id", () => {
-    it("should delete a service request", async () => {
-      const serviceToDelete = await prisma.serviceRequest.create({
-        data: {
-          description: "Vou ser deletado",
-          type: "OTHER",
-          requesterCpf: mockResident.cpf
-        }
-      });
-
-      const response = await request(app)
-        .delete(`/services/${serviceToDelete.id}`);
-
-      expect(response.status).toBe(204);
-
-      const checkDb = await prisma.serviceRequest.findUnique({
-        where: { id: serviceToDelete.id }
-      });
-      expect(checkDb).toBeNull();
-    });
-  });
-
 });

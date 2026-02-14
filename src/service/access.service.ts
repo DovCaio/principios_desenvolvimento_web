@@ -23,12 +23,19 @@ export const AccessService = {
       throw new Error("Visitante já está dentro do condomínio");
     }
 
-    return await prisma.accessLog.create({
+    const accessLog = await prisma.accessLog.create({
       data: {
         visitorId,
         status: AccessStatus.OPEN,
       },
     });
+
+    const visitorType = visitor.lotId ? "GUEST" : "SERVICE_PROVIDER";
+
+    return {
+      accessLog,
+      type: visitorType
+    };
   },
 
   async registerExit(visitorId: number) {
