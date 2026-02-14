@@ -256,6 +256,19 @@ describe("Employee Integration Tests", () => {
           .set("Authorization", `Bearer ${token}`)
           .set("x-test-id", "1.2.3.10");
 
+        const association = await prisma.resident.findFirst({
+            where: {
+              userCpf: payload.cpf,
+              AND: {
+                lotId: lotId,
+              }
+            },
+        });
+
+        expect(association).not.toBeNull();
+        expect(association?.userCpf).toBe(payload.cpf);
+        expect(association?.lotId).toBe(lotId);
+
         expect(associationResponse.status).toBe(200);
         expect(associationResponse.body.userCpf).toBe(payload.cpf);
         expect(associationResponse.body.lotId).toBe(lotResponse.body.id);
