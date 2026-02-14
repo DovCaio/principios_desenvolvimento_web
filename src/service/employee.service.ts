@@ -85,7 +85,7 @@ export const EmployeeService = {
     );
 
     if (!residentAlreadAssociated) {
-        throw new NotAssociateResidentException();
+      throw new NotAssociateResidentException();
     }
 
     return LotRepository.dessociateResidentLot(cpf, lotId);
@@ -104,5 +104,38 @@ export const EmployeeService = {
     }
 
     return LotRepository.associateResidentLotResponsible(cpf, lotId);
+  },
+
+  async unmakeResponsibleResidentLot(cpf: string, lotId: number) {
+    const user = await ResidentRepository.getOne(cpf);
+
+    if (!user) {
+      throw new UserNotFoundException();
+    }
+
+    const lot = await LotRepository.get(lotId);
+
+    if (!lot) {
+      throw new LotNotFoundException();
+    }
+
+    const residentAlreadAssociated = await LotRepository.getResidentByCpfInLot(
+      lotId,
+      cpf,
+    );
+
+    if (!residentAlreadAssociated) {
+      throw new NotAssociateResidentException();
+    }
+
+    const isResponsible = await LotRepository.isResponsible(cpf, lotId);
+
+    if (!isResponsible) {
+      throw new NotAssociateResidentException(
+        "Esse usuário não é responsável por esse lote.",
+      );
+    }
+
+    return LotRepository.unmakeResponsibleResidentLot(cpf, lotId);
   },
 };

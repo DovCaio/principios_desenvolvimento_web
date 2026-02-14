@@ -80,5 +80,30 @@ export const LotRepository = {
       },
       include: { user: true, lot: true, responsibleFor: true },
     });
+  },
+  async unmakeResponsibleResidentLot(cpf: string, lotId: number) {
+    return prisma.resident.update({
+      where: {
+        userCpf: cpf,
+      },
+      data: {
+        responsibleFor: {
+          disconnect: { id: lotId },
+        },
+      }
+    });
+  },
+  async isResponsible(cpf: string, lotId: number) {
+    const lot = await prisma.lot.findFirst({
+      where: {
+        id: lotId,
+        responsible: {
+          userCpf: cpf,
+        },
+      },
+    });
+
+    return !!lot;
   }
+
 };

@@ -414,7 +414,6 @@ describe("Employee Integration Tests", () => {
             .set("Authorization", `Bearer ${token}`)
             .set("x-test-id", "1.2.3.11");
             
-          console.log(associationResponse.body);
 
           expect(associationResponse.status).toBe(200);
           const lot = await prisma.lot.findFirst({
@@ -423,10 +422,33 @@ describe("Employee Integration Tests", () => {
             },
           });
 
+          expect(lot?.responsibleId).not.toBeNull();
+          expect(lot?.responsibleId).toBe(associationResponse.body.id);
+
           expect(lot?.responsibleId).toBe(associationResponse.body.id);
         })
 
     })
+
+    describe("Dessociate Resident to responsible for the lot", () => {
+
+        it("should dessociate an resident to responsible for the lot", async () => {
+          const dessociationResponse = await request(app)
+            .delete(`/employee/unmake_responsible_resident/${residentPayload.cpf}/lot/${lotId}`)
+            .set("Authorization", `Bearer ${token}`)
+            .set("x-test-id", "1.2.3.12");
+          
+          expect(dessociationResponse.status).toBe(204);
+
+          const lot = await prisma.lot.findFirst({
+            where: {
+              id: lotId,
+            },
+          });
+
+          expect(lot?.responsibleId).toBeNull();
+        })
+      });
   });
 
   describe("Audit", () => {
