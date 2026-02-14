@@ -101,5 +101,6 @@ useRouter.delete("/:cpf", EmployeeController.delete);
 
 useRouter.put("/associate_resident/:cpf/lot/:lotId", authenticate,  EmployeeController.associateResidentLot);
 
+useRouter.delete("/dessociate_resident/:cpf/lot/:lotId", authenticate, EmployeeController.dessociateResidentLot);
 
 export default useRouter;

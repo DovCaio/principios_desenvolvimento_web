@@ -204,18 +204,22 @@ describe("Employee Integration Tests", () => {
   });
 
   describe("Manegments Associations", () => {
+    const payload = {
+      cpf: "111544433321",
+      password: "CasaVerde2026",
+      phone: "11988887777",
+      name: "Alice Johnson",
+      userType: "EMPLOYEE",
+      employee: {
+        employeeType: "GateEmployee",
+      },
+    };
+
+    let token: string;
+
+    let lotId: number;
     describe("Associate Resident to Lot", () => {
       it("should associate an resident to a lot", async () => {
-        const payload = {
-          cpf: "111544433321",
-          password: "CasaVerde2026",
-          phone: "11988887777",
-          name: "Alice Johnson",
-          userType: "EMPLOYEE",
-          employee: {
-            employeeType: "GateEmployee",
-          },
-        };
 
         const manegment = await request(app)
           .post("/resident")
@@ -235,19 +239,21 @@ describe("Employee Integration Tests", () => {
 
         expect(lotResponse.status).toBe(201);
 
-        const token = await request(app)
+        lotId = lotResponse.body.id;
+
+        token = (await request(app)
           .post("/auth/login")
           .send({
             cpf: payload.cpf,
             password: payload.password,
           })
-          .set("x-test-id", "1.2.3.10");
+          .set("x-test-id", "1.2.3.10")).body.token;
 
         const associationResponse = await request(app)
           .put(
-            `/employee/associate_resident/${payload.cpf}/lot/${lotResponse.body.id}`,
+            `/employee/associate_resident/${payload.cpf}/lot/${lotId}`,
           )
-          .set("Authorization", `Bearer ${token.body.token}`)
+          .set("Authorization", `Bearer ${token}`)
           .set("x-test-id", "1.2.3.10");
 
         expect(associationResponse.status).toBe(200);
@@ -312,6 +318,34 @@ describe("Employee Integration Tests", () => {
 
         expect(associationResponse.status).toBe(404);
       });
+    });
+
+    describe("Dessassociate Resident to Lot", () => {
+
+        it("should dessociate an resident to a lot", async () => {
+
+          const dessociationResponse = await request(app)
+            .delete(
+              `/employee/dessociate_resident/${payload.cpf}/lot/${lotId}`,
+            )
+            .set("Authorization", `Bearer ${token}`)
+            .set("x-test-id", "1.2.3.10");
+
+          expect(dessociationResponse.status).toBe(204);
+
+          const association = await prisma.resident.findFirst({
+            where: {
+              userCpf: payload.cpf,
+              AND: {
+                lotId: lotId,
+              }
+            },
+          });
+
+          expect(association).toBeNull();
+
+        })
+
     });
   });
 

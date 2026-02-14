@@ -57,5 +57,22 @@ export const EmployeeService = {
 
             
         return LotRepository.associateResidentLot(cpf, lotId);
+    },
+
+    async dessociateResidentLot(cpf: string, lotId: number) {
+
+        const user = await ResidentRepository.getOne(cpf);
+
+        if (!user) {
+            throw new UserNotFoundException();
+        }
+
+        const lot = await LotRepository.get(lotId);
+
+        if (!lot) {
+            throw new LotNotFoundException();
+        }
+
+        return LotRepository.dessociateResidentLot(cpf, lotId);
     }
 }
