@@ -3,66 +3,104 @@ import request from "supertest";
 import { app } from "../src/app";
 import prisma from "../src/prisma";
 
+jest.setTimeout(60000);
+
 describe("Access Control E2E Tests", () => {
   let token: string;
-  let visitorId: number;
+  let visitorIdGuest: number;
+  let visitorIdService: number;
 
   beforeAll(async () => {
     await prisma.accessLog.deleteMany();
     await prisma.visitor.deleteMany();
+    await prisma.lot.deleteMany();
     await prisma.user.deleteMany();
 
     const hashedPassword = await bcrypt.hash("password123", 10);
-    const userCpf = "11122233344";
+    const userCpfGuest = "11122233344";
+    const userCpfService = "55566677788";
 
     await prisma.user.create({
       data: {
-        cpf: userCpf,
-        name: "Test User Access",
+        cpf: userCpfGuest,
+        name: "Test User Guest",
         password: hashedPassword,
         phone: "11122233344",
         userType: "VISITOR",
       },
     });
 
+    await prisma.user.create({
+      data: {
+        cpf: userCpfService,
+        name: "Test User Service",
+        password: hashedPassword,
+        phone: "55566677788",
+        userType: "VISITOR",
+      },
+    });
+
     const loginResponse = await request(app).post("/auth/login").send({
-      cpf: userCpf,
+      cpf: userCpfGuest,
       password: "password123",
     });
     token = loginResponse.body.token;
 
-    const visitor = await prisma.visitor.create({
+    const lot = await prisma.lot.create({ data: { intercom: "202" } });
+
+    const visitorGuest = await prisma.visitor.create({
       data: {
-        userCpf: userCpf,
+        userCpf: userCpfGuest,
+        lotId: lot.id
       },
     });
-    visitorId = visitor.id;
+    visitorIdGuest = visitorGuest.id;
+
+    const visitorService = await prisma.visitor.create({
+      data: {
+        userCpf: userCpfService,
+      },
+    });
+    visitorIdService = visitorService.id;
   });
 
   afterAll(async () => {
     await prisma.accessLog.deleteMany();
     await prisma.visitor.deleteMany();
+    await prisma.lot.deleteMany();
     await prisma.user.deleteMany();
     await prisma.$disconnect();
   });
 
   describe("POST /access/entry", () => {
-    it("should register entry successfully", async () => {
+    it("should register entry successfully as GUEST", async () => {
       const response = await request(app)
         .post("/access/entry")
         .set("Authorization", `Bearer ${token}`)
-        .send({ visitorId });
+        .send({ visitorId: visitorIdGuest });
 
       expect(response.status).toBe(201);
-      expect(response.body.status).toBe("OPEN");
-      expect(response.body.visitorId).toBe(visitorId);
+      expect(response.body.accessLog.status).toBe("OPEN");
+      expect(response.body.accessLog.visitorId).toBe(visitorIdGuest);
+      expect(response.body.type).toBe("GUEST");
+    });
+
+    it("should register entry successfully as SERVICE_PROVIDER", async () => {
+      const response = await request(app)
+        .post("/access/entry")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ visitorId: visitorIdService });
+
+      expect(response.status).toBe(201);
+      expect(response.body.accessLog.status).toBe("OPEN");
+      expect(response.body.type).toBe("SERVICE_PROVIDER");
     });
 
     it("should fail double entry", async () => {
       const response = await request(app)
         .post("/access/entry")
         .set("Authorization", `Bearer ${token}`)
-        .send({ visitorId });
+        .send({ visitorId: visitorIdGuest });
 
       expect(response.status).toBe(400);
     });
@@ -76,7 +114,7 @@ describe("Access Control E2E Tests", () => {
 
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBeGreaterThanOrEqual(1);
+      expect(response.body.length).toBeGreaterThanOrEqual(2);
     });
   });
 
@@ -85,7 +123,7 @@ describe("Access Control E2E Tests", () => {
       const response = await request(app)
         .post("/access/exit")
         .set("Authorization", `Bearer ${token}`)
-        .send({ visitorId });
+        .send({ visitorId: visitorIdGuest });
 
       expect(response.status).toBe(200);
       expect(response.body.status).toBe("CLOSED");
@@ -96,7 +134,7 @@ describe("Access Control E2E Tests", () => {
       const response = await request(app)
         .post("/access/exit")
         .set("Authorization", `Bearer ${token}`)
-        .send({ visitorId });
+        .send({ visitorId: visitorIdGuest });
 
       expect(response.status).toBe(400);
     });

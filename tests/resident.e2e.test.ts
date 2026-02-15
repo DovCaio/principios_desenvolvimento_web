@@ -1,10 +1,10 @@
 import request from "supertest";
-import app from "../src/app"; // seu Express
-import prisma from "../src/prisma";
-import { resetDatabase } from "../src/prisma";
-import e from "express";
+import app from "../src/app";
+import prisma, { resetDatabase } from "../src/prisma";
 
-describe("Employee Integration Tests", () => {
+jest.setTimeout(60000);
+
+describe("Resident Integration Tests", () => {
   afterAll(async () => {
     await resetDatabase();
   });
@@ -26,11 +26,7 @@ describe("Employee Integration Tests", () => {
       expect(response.body.user.name).toBe(payload.name);
       expect(response.body.user.userType).toBe(payload.userType);
       const resident = await prisma.resident.findFirst({
-        where: {
-          user: {
-            cpf: payload.cpf,
-          },
-        },
+        where: { user: { cpf: payload.cpf } },
         include: { user: { include: { resident: true } } },
       });
 
@@ -39,6 +35,43 @@ describe("Employee Integration Tests", () => {
       expect(resident?.user.phone).toBe("11999998888");
       expect(resident?.user.resident).toBeDefined();
       expect(resident?.user.userType).toBe("RESIDENT");
+    });
+
+    it("should post an resident as responsible for a lot", async () => {
+      const lot = await prisma.lot.create({ data: { intercom: "101" } });
+      
+      const payload = {
+        cpf: "12345678903",
+        phone: "11999998889",
+        name: "Alice Smith",
+        password: "SENHAmuitoforte1",
+        userType: "RESIDENT",
+        isResponsible: true,
+        lotId: lot.id
+      };
+
+      const response = await request(app).post("/resident").send(payload);
+      expect(response.status).toBe(201);
+
+      const updatedLot = await prisma.lot.findUnique({ where: { id: lot.id } });
+      expect(updatedLot?.responsibleId).toBeDefined();
+    });
+
+    it("should fail to post a second responsible resident for the same lot", async () => {
+      const lot = await prisma.lot.findFirst({ where: { intercom: "101" } });
+
+      const payload = {
+        cpf: "12345678904",
+        phone: "11999998880",
+        name: "Charlie Brown",
+        password: "SENHAmuitoforte1",
+        userType: "RESIDENT",
+        isResponsible: true,
+        lotId: lot?.id
+      };
+
+      const response = await request(app).post("/resident").send(payload);
+      expect(response.status).toBe(400); 
     });
 
     it("should put an resident", async () => {
@@ -55,11 +88,7 @@ describe("Employee Integration Tests", () => {
       expect(response.body.user.name).toBe(payload.name);
       expect(response.body.user.userType).toBe(payload.userType);
       const resident = await prisma.resident.findFirst({
-        where: {
-          user: {
-            cpf: "12345678902",
-          },
-        },
+        where: { user: { cpf: "12345678902" } },
         include: { user: { include: { resident: true } } },
       });
 
@@ -70,9 +99,7 @@ describe("Employee Integration Tests", () => {
       expect(resident?.user.userType).toBe("RESIDENT");
     });
 
-
     it("should get an resident", async () => {
-
       const response = await request(app).get("/resident/12345678902");
 
       expect(response.status).toBe(200);
@@ -81,11 +108,7 @@ describe("Employee Integration Tests", () => {
       expect(response.body.user.phone).toBe("11999998885");
       expect(response.body.user.userType).toBe("RESIDENT");
       const resident = await prisma.resident.findFirst({
-        where: {
-          user: {
-            cpf: "12345678902",
-          },
-        },
+        where: { user: { cpf: "12345678902" } },
         include: { user: { include: { resident: true } } },
       });
 
@@ -96,13 +119,10 @@ describe("Employee Integration Tests", () => {
       expect(resident?.user.userType).toBe("RESIDENT");
     });
 
-
     it("should get all resident's", async () => {
-
       const response = await request(app).get("/resident");
 
       expect(response.status).toBe(200);
-
       expect(response.body.length).toBeGreaterThan(0);
 
       const resident = await prisma.resident.findMany({
@@ -114,24 +134,16 @@ describe("Employee Integration Tests", () => {
     });
 
     it("should delete resident", async () => {
-
       const response = await request(app).delete("/resident/12345678902");
 
       expect(response.status).toBe(201);
 
       const resident = await prisma.resident.findFirst({
-        where: {
-          user: {
-            cpf: "12345678902",
-          },
-        },
+        where: { user: { cpf: "12345678902" } },
         include: { user: { include: { resident: true } } },
       });
 
       expect(resident).toBeNull();
     });
-
   });
-
-
 });
