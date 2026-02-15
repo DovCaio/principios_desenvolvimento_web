@@ -14,11 +14,16 @@ export const ServiceRequestService = {
             where: { cpf: serviceDto.requesterCpf }
         });
 
-        if (!user || user.userType === "VISITOR") {
-            throw new Error("Apenas moradores e funcionários podem abrir chamados.");
+        if (!user || user.userType !== "RESIDENT") {
+            throw new Error("Apenas moradores podem abrir chamados.");
         }
 
-        return ServiceRequestRepository.create(serviceDto);
+        const dataToSave = { 
+            ...serviceDto, 
+            status: "PENDING" as any 
+        };
+
+        return ServiceRequestRepository.create(dataToSave);
     },
 
     async listAll() {
@@ -48,8 +53,14 @@ export const ServiceRequestService = {
             }
 
             if (dto.status === "IN_PROGRESS") {
+                if (exists.status !== "PENDING") {
+                    throw new Error("Apenas chamados pendentes podem ser iniciados.");
+                }
                 updateData.startedAt = new Date();
             } else if (dto.status === "COMPLETED") {
+                if (exists.status !== "IN_PROGRESS") {
+                    throw new Error("Apenas chamados em progresso podem ser finalizados.");
+                }
                 updateData.finishedAt = new Date();
             }
         }

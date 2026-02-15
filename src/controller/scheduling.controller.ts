@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { SchedulingService } from "../service/scheduling.service";
+
 export const SchedulingController = {
   async create(req: Request, res: Response) {
     try {

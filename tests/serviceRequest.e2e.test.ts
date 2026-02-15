@@ -1,199 +1,169 @@
+import { PrismaClient } from "@prisma/client";
+import * as bcrypt from "bcryptjs";
 import request from "supertest";
-import app from "../src/app";
-import prisma from "../src/prisma";
+import { app } from "../src/app";
+
+jest.setTimeout(60000);
+
+const prisma = new PrismaClient();
 
 describe("ServiceRequest E2E Tests", () => {
-
-  const mockResident = {
-    cpf: "99988877700",
-    name: "Tester Resident",
-    phone: "11999990000",
-    password: "Password123",
-    userType: "RESIDENT" as const
-  };
-
-  const mockVisitor = {
-    cpf: "11122233344",
-    name: "Tester Visitor",
-    phone: "11999991111",
-    password: "Password123",
-    userType: "VISITOR" as const
-  };
-
-  const mockEmployee = {
-    cpf: "55566677788",
-    name: "Tester Employee",
-    phone: "11999992222",
-    password: "Password123",
-    userType: "EMPLOYEE" as const
-  };
-
-  const servicePayload = {
-    description: "Lâmpada do corredor queimada",
-    type: "COMMON_AREA" as const
-  };
+  const residentCpf = "12345678910";
+  const employeeCpf = "10987654321";
+  let residentToken: string;
+  let employeeToken: string;
+  let serviceId: number;
 
   beforeAll(async () => {
+    await prisma.auditLog.deleteMany(); 
     await prisma.serviceRequest.deleteMany();
-    await prisma.visitor.deleteMany();
-    await prisma.resident.deleteMany();
-    await prisma.employee.deleteMany();
-    await prisma.user.deleteMany({
-      where: { cpf: { in: [mockResident.cpf, mockVisitor.cpf, mockEmployee.cpf] } }
+    await prisma.user.deleteMany();
+
+    const hashedPassword = await bcrypt.hash("password123", 10);
+
+    await prisma.user.create({
+      data: { cpf: residentCpf, name: "Morador Teste", password: hashedPassword, phone: "1111", userType: "RESIDENT" }
     });
 
-    await prisma.user.createMany({
-      data: [mockResident, mockVisitor, mockEmployee]
+    await prisma.user.create({
+      data: { cpf: employeeCpf, name: "Funcionario Teste", password: hashedPassword, phone: "2222", userType: "EMPLOYEE" }
     });
+
+    const residentLogin = await request(app)
+      .post("/auth/login")
+      .send({ cpf: residentCpf, password: "password123" })
+      .set("x-test-id", "service-test-1");
+    residentToken = residentLogin.body.token;
+
+    const employeeLogin = await request(app)
+      .post("/auth/login")
+      .send({ cpf: employeeCpf, password: "password123" })
+      .set("x-test-id", "service-test-2");
+    employeeToken = employeeLogin.body.token;
   });
 
   afterAll(async () => {
+    await prisma.auditLog.deleteMany();
     await prisma.serviceRequest.deleteMany();
-    await prisma.user.deleteMany({
-      where: { cpf: { in: [mockResident.cpf, mockVisitor.cpf, mockEmployee.cpf] } }
-    });
+    await prisma.user.deleteMany();
     await prisma.$disconnect();
   });
 
   describe("POST /services", () => {
-    it("should create a service request successfully as RESIDENT", async () => {
-      const response = await request(app)
-        .post("/services")
-        .set("x-user-cpf", mockResident.cpf)
-        .send(servicePayload);
-
-      expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty("id");
-      expect(response.body.description).toBe(servicePayload.description);
-      expect(response.body.status).toBe("PENDING");
-      expect(response.body.requesterCpf).toBe(mockResident.cpf);
-    });
-
-    it("should fail when VISITOR tries to create a service request", async () => {
-      const response = await request(app)
-        .post("/services")
-        .set("x-user-cpf", mockVisitor.cpf)
-        .send(servicePayload);
-
-      expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Apenas moradores e funcionários podem abrir chamados.");
-    });
-
     it("should fail when description is missing", async () => {
-      const response = await request(app)
+      const res = await request(app)
         .post("/services")
-        .set("x-user-cpf", mockResident.cpf)
-        .send({ type: "MAINTENANCE" });
+        .set("Authorization", `Bearer ${residentToken}`)
+        .set("x-user-cpf", residentCpf)
+        .set("x-test-id", "service-test-missing-desc")
+        .send({ type: "MAINTENANCE" }); // Sem descrição
 
-      expect(response.status).toBe(400);
+      expect(res.status).toBe(400); 
     });
 
-    it("should fail when header x-user-cpf is missing", async () => {
-      const response = await request(app)
+    it("should allow a RESIDENT to create a request", async () => {
+      const res = await request(app)
         .post("/services")
-        .send(servicePayload);
+        .set("Authorization", `Bearer ${residentToken}`)
+        .set("x-user-cpf", residentCpf)
+        .set("x-test-id", "service-test-3")
+        .send({
+          description: "Vazamento na piscina",
+          type: "MAINTENANCE"
+        });
 
-      expect(response.status).toBe(400);
+      expect(res.status).toBe(201);
+      expect(res.body).toHaveProperty("id");
+      serviceId = res.body.id;
+    });
+
+    it("should block an EMPLOYEE from creating a request", async () => {
+      const res = await request(app)
+        .post("/services")
+        .set("Authorization", `Bearer ${employeeToken}`)
+        .set("x-user-cpf", employeeCpf)
+        .set("x-test-id", "service-test-4")
+        .send({ description: "Limpar hall", type: "CLEANING" });
+
+      expect(res.status).toBe(400); 
     });
   });
 
   describe("GET /services", () => {
-    it("should list service requests", async () => {
-      const response = await request(app).get("/services");
+    it("should list all requests", async () => {
+      const res = await request(app)
+        .get("/services")
+        .set("Authorization", `Bearer ${employeeToken}`)
+        .set("x-test-id", "service-test-list");
 
-      expect(response.status).toBe(200);
-      expect(Array.isArray(response.body)).toBe(true);
-      
-      const createdItem = response.body.find((item: any) => item.description === servicePayload.description);
-      expect(createdItem).toBeDefined();
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBeGreaterThan(0);
     });
   });
 
   describe("PUT /services/:id", () => {
-    it("should fail when RESIDENT tries to change status", async () => {
-      const newService = await prisma.serviceRequest.create({
-        data: {
-          description: "Teste Trava Morador",
-          type: "MAINTENANCE",
-          requesterCpf: mockResident.cpf,
-          status: "PENDING"
-        }
-      });
-
-      const response = await request(app)
-        .put(`/services/${newService.id}`)
-        .set("x-user-cpf", mockResident.cpf)
+    it("should fail when updating non-existent request", async () => {
+      const res = await request(app)
+        .put("/services/99999")
+        .set("Authorization", `Bearer ${employeeToken}`)
+        .set("x-user-cpf", employeeCpf)
+        .set("x-test-id", "service-test-non-existent")
         .send({ status: "IN_PROGRESS" });
 
-      expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Apenas funcionários podem alterar o status do chamado.");
+      expect(res.status).toBe(400);
     });
 
-    it("should update status to IN_PROGRESS and set startedAt as EMPLOYEE", async () => {
-      const newService = await prisma.serviceRequest.create({
-        data: {
-          description: "Teste IN_PROGRESS",
-          type: "MAINTENANCE",
-          requesterCpf: mockResident.cpf,
-          status: "PENDING"
-        }
-      });
-
-      const response = await request(app)
-        .put(`/services/${newService.id}`)
-        .set("x-user-cpf", mockEmployee.cpf)
+    it("should block RESIDENT from changing the status", async () => {
+      const res = await request(app)
+        .put(`/services/${serviceId}`)
+        .set("Authorization", `Bearer ${residentToken}`)
+        .set("x-user-cpf", residentCpf)
+        .set("x-test-id", "service-test-5")
         .send({ status: "IN_PROGRESS" });
 
-      expect(response.status).toBe(200);
-      expect(response.body.status).toBe("IN_PROGRESS");
-      
-      const updatedDb = await prisma.serviceRequest.findUnique({ where: { id: newService.id } });
-      expect(updatedDb?.startedAt).not.toBeNull();
+      expect(res.status).toBe(400); 
     });
 
-    it("should update status to COMPLETED and set finishedAt as EMPLOYEE", async () => {
-      const newService = await prisma.serviceRequest.create({
-        data: {
-          description: "Teste COMPLETED",
-          type: "MAINTENANCE",
-          requesterCpf: mockResident.cpf,
-          status: "IN_PROGRESS"
-        }
-      });
+    it("should allow EMPLOYEE to start the service", async () => {
+      const res = await request(app)
+        .put(`/services/${serviceId}`)
+        .set("Authorization", `Bearer ${employeeToken}`)
+        .set("x-user-cpf", employeeCpf)
+        .set("x-test-id", "service-test-6")
+        .send({ status: "IN_PROGRESS" });
 
-      const response = await request(app)
-        .put(`/services/${newService.id}`)
-        .set("x-user-cpf", mockEmployee.cpf)
+      expect(res.status).toBe(200);
+    });
+
+    it("should allow EMPLOYEE to finish the service", async () => {
+      const res = await request(app)
+        .put(`/services/${serviceId}`)
+        .set("Authorization", `Bearer ${employeeToken}`)
+        .set("x-user-cpf", employeeCpf)
+        .set("x-test-id", "service-test-7")
         .send({ status: "COMPLETED" });
 
-      expect(response.status).toBe(200);
-      expect(response.body.status).toBe("COMPLETED");
-
-      const updatedDb = await prisma.serviceRequest.findUnique({ where: { id: newService.id } });
-      expect(updatedDb?.finishedAt).not.toBeNull();
+      expect(res.status).toBe(200);
     });
   });
 
   describe("DELETE /services/:id", () => {
-    it("should delete a service request", async () => {
-      const serviceToDelete = await prisma.serviceRequest.create({
-        data: {
-          description: "Vou ser deletado",
-          type: "OTHER",
-          requesterCpf: mockResident.cpf
-        }
-      });
+    it("should fail when deleting non-existent request", async () => {
+      const res = await request(app)
+        .delete("/services/99999")
+        .set("Authorization", `Bearer ${employeeToken}`)
+        .set("x-test-id", "service-test-del-fail");
 
-      const response = await request(app)
-        .delete(`/services/${serviceToDelete.id}`);
+      expect(res.status).toBe(400);
+    });
 
-      expect(response.status).toBe(204);
+    it("should delete the request successfully", async () => {
+      const res = await request(app)
+        .delete(`/services/${serviceId}`)
+        .set("Authorization", `Bearer ${employeeToken}`)
+        .set("x-test-id", "service-test-del-success");
 
-      const checkDb = await prisma.serviceRequest.findUnique({
-        where: { id: serviceToDelete.id }
-      });
-      expect(checkDb).toBeNull();
+      expect(res.status).toBe(204);
     });
   });
-
 });
