@@ -1,127 +1,169 @@
+import { PrismaClient } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 import request from "supertest";
 import { app } from "../src/app";
-import prisma from "../src/prisma";
 
-jest.setTimeout(30000);
+jest.setTimeout(60000);
 
-describe("Scheduling E2E Tests", () => {
-  let token: string;
-  let leisureAreaId: number;
-  let userCpf: string;
+const prisma = new PrismaClient();
+
+describe("ServiceRequest E2E Tests", () => {
+  const residentCpf = "12345678910";
+  const employeeCpf = "10987654321";
+  let residentToken: string;
+  let employeeToken: string;
+  let serviceId: number;
 
   beforeAll(async () => {
-    await prisma.scheduling.deleteMany();
-    await prisma.leisureArea.deleteMany();
+    await prisma.auditLog.deleteMany(); 
+    await prisma.serviceRequest.deleteMany();
     await prisma.user.deleteMany();
 
     const hashedPassword = await bcrypt.hash("password123", 10);
 
-    userCpf = "99988877700";
-    
     await prisma.user.create({
-      data: {
-        cpf: userCpf,
-        name: "Test User Scheduling",
-        password: hashedPassword,
-        phone: "99988877700",
-        userType: "RESIDENT",
-      },
+      data: { cpf: residentCpf, name: "Morador Teste", password: hashedPassword, phone: "1111", userType: "RESIDENT" }
     });
 
-    // Login REAL para pegar um Token válido
-    const loginResponse = await request(app).post("/auth/login").send({
-      cpf: userCpf,
-      password: "password123",
+    await prisma.user.create({
+      data: { cpf: employeeCpf, name: "Funcionario Teste", password: hashedPassword, phone: "2222", userType: "EMPLOYEE" }
     });
-    token = loginResponse.body.token;
 
-    const area = await prisma.leisureArea.create({
-      data: {
-        name: "Quadra E2E",
-        capacity: 10,
-        openHour: "08:00",
-        closeHour: "22:00",
-      },
-    });
-    leisureAreaId = area.id;
+    const residentLogin = await request(app)
+      .post("/auth/login")
+      .send({ cpf: residentCpf, password: "password123" })
+      .set("x-test-id", "service-test-1");
+    residentToken = residentLogin.body.token;
+
+    const employeeLogin = await request(app)
+      .post("/auth/login")
+      .send({ cpf: employeeCpf, password: "password123" })
+      .set("x-test-id", "service-test-2");
+    employeeToken = employeeLogin.body.token;
   });
 
   afterAll(async () => {
-    await prisma.scheduling.deleteMany();
-    await prisma.leisureArea.deleteMany();
+    await prisma.auditLog.deleteMany();
+    await prisma.serviceRequest.deleteMany();
     await prisma.user.deleteMany();
     await prisma.$disconnect();
   });
 
-  describe("POST /scheduling", () => {
-    it("should create a scheduling successfully", async () => {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(14, 0, 0, 0);
+  describe("POST /services", () => {
+    it("should fail when description is missing", async () => {
+      const res = await request(app)
+        .post("/services")
+        .set("Authorization", `Bearer ${residentToken}`)
+        .set("x-user-cpf", residentCpf)
+        .set("x-test-id", "service-test-missing-desc")
+        .send({ type: "MAINTENANCE" }); // Sem descrição
 
-      const endTime = new Date(tomorrow);
-      endTime.setHours(15, 0, 0, 0);
-
-      const payload = {
-        leisureAreaId: leisureAreaId,
-        startTime: tomorrow.toISOString(),
-        endTime: endTime.toISOString(),
-      };
-
-      const response = await request(app)
-        .post("/scheduling")
-        .set("Authorization", `Bearer ${token}`)
-        .send(payload);
-
-      expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty("id");
-      expect(response.body.userCpf).toBe(userCpf);
+      expect(res.status).toBe(400); 
     });
 
-    it("should fail when scheduling causes collision", async () => {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(14, 30, 0, 0);
+    it("should allow a RESIDENT to create a request", async () => {
+      const res = await request(app)
+        .post("/services")
+        .set("Authorization", `Bearer ${residentToken}`)
+        .set("x-user-cpf", residentCpf)
+        .set("x-test-id", "service-test-3")
+        .send({
+          description: "Vazamento na piscina",
+          type: "MAINTENANCE"
+        });
 
-      const endTime = new Date(tomorrow);
-      endTime.setHours(15, 30, 0, 0);
-
-      const payload = {
-        leisureAreaId: leisureAreaId,
-        startTime: tomorrow.toISOString(),
-        endTime: endTime.toISOString(),
-      };
-
-      const response = await request(app)
-        .post("/scheduling")
-        .set("Authorization", `Bearer ${token}`)
-        .send(payload);
-
-      expect(response.status).toBe(400);
-      // Removida a validação de texto exata para evitar falhas por causa do padrão de erro do Controller
+      expect(res.status).toBe(201);
+      expect(res.body).toHaveProperty("id");
+      serviceId = res.body.id;
     });
 
-    it("should fail when scheduling outside operating hours", async () => {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(23, 0, 0, 0);
+    it("should block an EMPLOYEE from creating a request", async () => {
+      const res = await request(app)
+        .post("/services")
+        .set("Authorization", `Bearer ${employeeToken}`)
+        .set("x-user-cpf", employeeCpf)
+        .set("x-test-id", "service-test-4")
+        .send({ description: "Limpar hall", type: "CLEANING" });
 
-      const endTime = new Date(tomorrow);
-      endTime.setHours(23, 59, 0, 0);
+      expect(res.status).toBe(400); 
+    });
+  });
 
-      const payload = {
-        leisureAreaId: leisureAreaId,
-        startTime: tomorrow.toISOString(),
-        endTime: endTime.toISOString(),
-      };
+  describe("GET /services", () => {
+    it("should list all requests", async () => {
+      const res = await request(app)
+        .get("/services")
+        .set("Authorization", `Bearer ${employeeToken}`)
+        .set("x-test-id", "service-test-list");
 
-      const response = await request(app)
-        .post("/scheduling")
-        .set("Authorization", `Bearer ${token}`)
-        .send(payload);
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBeGreaterThan(0);
+    });
+  });
 
-      expect(response.status).toBe(400);
+  describe("PUT /services/:id", () => {
+    it("should fail when updating non-existent request", async () => {
+      const res = await request(app)
+        .put("/services/99999")
+        .set("Authorization", `Bearer ${employeeToken}`)
+        .set("x-user-cpf", employeeCpf)
+        .set("x-test-id", "service-test-non-existent")
+        .send({ status: "IN_PROGRESS" });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("should block RESIDENT from changing the status", async () => {
+      const res = await request(app)
+        .put(`/services/${serviceId}`)
+        .set("Authorization", `Bearer ${residentToken}`)
+        .set("x-user-cpf", residentCpf)
+        .set("x-test-id", "service-test-5")
+        .send({ status: "IN_PROGRESS" });
+
+      expect(res.status).toBe(400); 
+    });
+
+    it("should allow EMPLOYEE to start the service", async () => {
+      const res = await request(app)
+        .put(`/services/${serviceId}`)
+        .set("Authorization", `Bearer ${employeeToken}`)
+        .set("x-user-cpf", employeeCpf)
+        .set("x-test-id", "service-test-6")
+        .send({ status: "IN_PROGRESS" });
+
+      expect(res.status).toBe(200);
+    });
+
+    it("should allow EMPLOYEE to finish the service", async () => {
+      const res = await request(app)
+        .put(`/services/${serviceId}`)
+        .set("Authorization", `Bearer ${employeeToken}`)
+        .set("x-user-cpf", employeeCpf)
+        .set("x-test-id", "service-test-7")
+        .send({ status: "COMPLETED" });
+
+      expect(res.status).toBe(200);
+    });
+  });
+
+  describe("DELETE /services/:id", () => {
+    it("should fail when deleting non-existent request", async () => {
+      const res = await request(app)
+        .delete("/services/99999")
+        .set("Authorization", `Bearer ${employeeToken}`)
+        .set("x-test-id", "service-test-del-fail");
+
+      expect(res.status).toBe(400);
+    });
+
+    it("should delete the request successfully", async () => {
+      const res = await request(app)
+        .delete(`/services/${serviceId}`)
+        .set("Authorization", `Bearer ${employeeToken}`)
+        .set("x-test-id", "service-test-del-success");
+
+      expect(res.status).toBe(204);
     });
   });
 });

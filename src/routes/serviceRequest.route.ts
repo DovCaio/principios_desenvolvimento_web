@@ -12,7 +12,7 @@ const serviceRoutes = Router();
 
 /**
  * @swagger
- * /service-request:
+ * /services:
  * post:
  * summary: Cria uma solicitação de serviço
  * tags: [ServiceRequest]
@@ -40,7 +40,7 @@ serviceRoutes.post("/", ServiceRequestController.create);
 
 /**
  * @swagger
- * /service-request:
+ * /services:
  * get:
  * summary: Lista todas as solicitações de serviço
  * tags: [ServiceRequest]
@@ -52,7 +52,7 @@ serviceRoutes.get("/", ServiceRequestController.list);
 
 /**
  * @swagger
- * /service-request/{id}:
+ * /services/{id}:
  * put:
  * summary: Atualiza uma solicitação de serviço
  * tags: [ServiceRequest]
@@ -76,7 +76,7 @@ serviceRoutes.put("/:id", ServiceRequestController.update);
 
 /**
  * @swagger
- * /service-request/{id}:
+ * /services/{id}:
  * delete:
  * summary: Remove uma solicitação de serviço
  * tags: [ServiceRequest]
