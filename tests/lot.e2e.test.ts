@@ -17,6 +17,7 @@ describe("Employee Integration Tests", () => {
       const response = await request(app)
         .post("/lot")
         .send(payload)
+        .set("x-test-id", "1.2.3.2024")
         .expect(201);
 
       expect(response.body).toHaveProperty("id");

@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import jwt from "jsonwebtoken";
+import { verifyToken } from "../utils/auth";
 
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
     const token = req.header("Authorization")?.replace("Bearer ", "");
@@ -9,8 +9,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
     }
 
     try {
-        const secret = process.env.JWT_SECRET || "segredo_padrao_dev";
-        const decoded = jwt.verify(token, secret);//Usar função auxiliar existente
+        const decoded = verifyToken(token);//Usar função auxiliar existente
         (req as any).user = decoded; 
         next();
     } catch (err) {

@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import { CredentialInvalidException } from "../exceptions/CredentialInvalidException";
-import { comparePassword, hashPassword } from "../utils/auth";
+import { comparePassword, generateToken, hashPassword } from "../utils/auth";
 
 const prisma = new PrismaClient();
 
@@ -21,17 +21,7 @@ export const AuthService = {
             throw new CredentialInvalidException();
         }
 
-        const secret = process.env.JWT_SECRET || "segredo_padrao_dev";
-        
-        const token = jwt.sign( //Mudar para a função auxiliar já existent
-            { 
-                cpf: user.cpf, 
-                userType: user.userType,
-                name: user.name
-            }, 
-            secret, 
-            { expiresIn: "1d" }
-        );
+        const token = generateToken(user.cpf, user.name, user.userType);
 
         return { 
             token, 

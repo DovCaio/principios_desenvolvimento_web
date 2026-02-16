@@ -19,6 +19,8 @@ describe("Resident Integration Tests", () => {
         userType: "RESIDENT",
       };
 
+      
+
       const response = await request(app).post("/resident").send(payload);
 
       expect(response.status).toBe(201);
