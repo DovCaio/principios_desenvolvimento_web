@@ -75,21 +75,23 @@ export const EmployeeService = {
     return LotRepository.associateResidentLot(resindetCpf, lotId);
   },
 
-  async dessociateResidentLot(cpf: string, lotId: number) {
-    const user = await this.validateUser(cpf);
+  async dessociateResidentLot(residentCpf: string, employeeCpf: string, lotId: number) {
+    const user = await this.validateUser(residentCpf);
 
     const lot = await this.validateLot(lotId);
 
     const residentAlreadAssociated = await LotRepository.getResidentByCpfInLot(
       lotId,
-      cpf,
+      residentCpf,
     );
 
     if (!residentAlreadAssociated) {
       throw new NotAssociateResidentException();
     }
 
-    return LotRepository.dessociateResidentLot(cpf, lotId);
+    await LotRepository.createHistoricEntry(lotId, LotAction.REMOVED_RESIDENT, employeeCpf, residentCpf);
+
+    return LotRepository.dessociateResidentLot(residentCpf, lotId);
   },
   async associateResidentLotResponsible(cpf: string, lotId: number) {
     const user = await ResidentRepository.getOne(cpf);

@@ -31,7 +31,8 @@ export const EmployeeController = {
   },
   async dessociateResidentLot(req: Request, res: Response) {
     const { cpf, lotId } = req.params;
-    await EmployeeService.dessociateResidentLot(cpf, parseInt(lotId));
+    const employeeCpf = getCpfFromToken(req.header("Authorization")?.replace("Bearer ", "") || ""); 
+    await EmployeeService.dessociateResidentLot(cpf, employeeCpf, parseInt(lotId));
     return res.status(204).send();
   },
   async associateResidentLotResponsible(req: Request, res: Response) {
