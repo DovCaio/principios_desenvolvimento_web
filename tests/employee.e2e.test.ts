@@ -667,6 +667,27 @@ describe("Employee Integration Tests", () => {
       expect(response.body[0].residentCpf).toBe(residentPayload.cpf);
     });
 
+
+    it("should get the historic of a lot, that have make an resident responsible for the lot", async () => {
+      await request(app)
+        .put(`/employee/make_responsible_resident/${residentPayload.cpf}/lot/${lotId}`)
+        .set("Authorization", `Bearer ${token}`)
+        .set("x-test-id", "5.4.3.2");
+
+      const response = await request(app)
+        .get(`/employee/lot_historic/${lotId}`)
+        .set("Authorization", `Bearer ${token}`)
+        .set("x-test-id", "5.4.3.2");
+
+      expect(response.status).toBe(200);
+      expect(response.body.length).toBeGreaterThan(2);
+      expect(response.body[0].lotId).toBe(lotId);
+      expect(response.body[0].action).toBe("ASSIGNED_RESPONSIBLE");
+      expect(response.body[0].employeeCpf).toBe(employeePayload.cpf);
+      expect(response.body[0].residentCpf).toBe(residentPayload.cpf);
+    });
+
+
     it("should not get the historic of a lot without loged", async () => {
       const response = await request(app)
         .get(`/employee/lot_historic/${lotId}`)

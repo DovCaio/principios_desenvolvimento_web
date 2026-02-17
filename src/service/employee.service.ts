@@ -93,8 +93,8 @@ export const EmployeeService = {
 
     return LotRepository.dessociateResidentLot(residentCpf, lotId);
   },
-  async associateResidentLotResponsible(cpf: string, lotId: number) {
-    const user = await ResidentRepository.getOne(cpf);
+  async associateResidentLotResponsible(residentCpf: string, employeeCpf: string, lotId: number) {
+    const user = await ResidentRepository.getOne(residentCpf);
 
     if (!user) {
       throw new UserNotFoundException();
@@ -106,11 +106,13 @@ export const EmployeeService = {
       throw new LotNotFoundException();
     }
 
-    return LotRepository.associateResidentLotResponsible(cpf, lotId);
+    await LotRepository.createHistoricEntry(lotId, LotAction.ASSIGNED_RESPONSIBLE, employeeCpf, residentCpf);
+
+    return LotRepository.associateResidentLotResponsible(residentCpf, lotId);
   },
 
-  async unmakeResponsibleResidentLot(cpf: string, lotId: number) {
-    const user = await ResidentRepository.getOne(cpf);
+  async unmakeResponsibleResidentLot(residentCpf: string, lotId: number) {
+    const user = await ResidentRepository.getOne(residentCpf);
 
     if (!user) {
       throw new UserNotFoundException();
@@ -124,14 +126,14 @@ export const EmployeeService = {
 
     const residentAlreadAssociated = await LotRepository.getResidentByCpfInLot(
       lotId,
-      cpf,
+      residentCpf,
     );
 
     if (!residentAlreadAssociated) {
       throw new NotAssociateResidentException();
     }
 
-    const isResponsible = await LotRepository.isResponsible(cpf, lotId);
+    const isResponsible = await LotRepository.isResponsible(residentCpf, lotId);
 
     if (!isResponsible) {
       throw new NotAssociateResidentException(
@@ -139,7 +141,7 @@ export const EmployeeService = {
       );
     }
 
-    return LotRepository.unmakeResponsibleResidentLot(cpf, lotId);
+    return LotRepository.unmakeResponsibleResidentLot(residentCpf, lotId);
   },
   async getLotHistoric(lotId: number) {
     const lot = await LotRepository.get(lotId);
