@@ -111,7 +111,7 @@ export const EmployeeService = {
     return LotRepository.associateResidentLotResponsible(residentCpf, lotId);
   },
 
-  async unmakeResponsibleResidentLot(residentCpf: string, lotId: number) {
+  async unmakeResponsibleResidentLot(residentCpf: string, employeeCpf: string, lotId: number) {
     const user = await ResidentRepository.getOne(residentCpf);
 
     if (!user) {
@@ -140,6 +140,8 @@ export const EmployeeService = {
         "Esse usuário não é responsável por esse lote.",
       );
     }
+
+      await LotRepository.createHistoricEntry(lotId, LotAction.UNASSIGNED_RESPONSIBLE, employeeCpf, residentCpf);
 
     return LotRepository.unmakeResponsibleResidentLot(residentCpf, lotId);
   },
