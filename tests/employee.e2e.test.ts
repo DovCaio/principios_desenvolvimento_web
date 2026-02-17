@@ -592,7 +592,10 @@ describe("Employee Integration Tests", () => {
       userType: "RESIDENT",
     };
 
-    it("should get the historic of a lot", async () => {
+    let token: string;
+    let lotId: number;
+
+    it("should get the historic of a lot,that have added an resident", async () => {
       const lotResponse = await request(app)
         .post("/lot")
         .send(lotPayload)
@@ -607,7 +610,7 @@ describe("Employee Integration Tests", () => {
 
       expect(responeEmployee.status).toBe(201);
 
-      const token = (
+      token = (
         await request(app)
           .post("/auth/login")
           .send({
@@ -617,7 +620,7 @@ describe("Employee Integration Tests", () => {
           .set("x-test-id", "5.4.3.2")
       ).body.token;
 
-      const lotId = lotResponse.body.id;
+      lotId = lotResponse.body.id;
 
       const residentResponse = await request(app)
         .post("/resident")
@@ -643,5 +646,31 @@ describe("Employee Integration Tests", () => {
       expect(response.body[0].employeeCpf).toBe(employeePayload.cpf);
       expect(response.body[0].residentCpf).toBe(residentPayload.cpf);
     });
+
+
+    it("should not get the historic of a lot without loged", async () => {
+      const response = await request(app)
+        .get(`/employee/lot_historic/${lotId}`)
+        .set("x-test-id", "5.4.3.2");
+        
+      expect(response.status).toBe(401);
+    });
+
+    it("should not get the historic of a lot with invalid lot id", async () => {
+      const response = await request(app)
+        .get(`/employee/lot_historic/99999`)
+        .set("Authorization", `Bearer ${token}`)
+        .set("x-test-id", "5.4.3.2");
+        
+      expect(response.status).toBe(404);
+    });
+
+    it("should not get the historic of a lot with user without permission", async () => {
+      const response = await request(app)
+        .get(`/employee/lot_historic/${lotId}`)
+        .set("x-test-id", "5.4.3.2");
+
+      expect(response.status).toBe(401);
+    })
   });
 });
