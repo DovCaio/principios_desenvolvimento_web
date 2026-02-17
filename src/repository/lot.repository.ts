@@ -1,3 +1,4 @@
+import { LotAction } from "@prisma/client";
 import { LotCreateDTO } from "../dto/ lot/LotCreateDTO";
 import { LotPutDTO } from "../dto/ lot/LotPutDTO";
 import prisma from "../prisma";
@@ -104,6 +105,27 @@ export const LotRepository = {
     });
 
     return !!lot;
+  },
+
+  async createHistoricEntry(lotId: number, action: LotAction, employeeCpf: string, residentCpf: string) {
+    return prisma.lotHistoric.create({
+      data: {
+        lotId,
+        action,
+        employeeCpf,
+        residentCpf,
+      },
+    });
+  },
+  async getLotHistoric(lotId: number) {
+    return prisma.lotHistoric.findMany({
+      where: {
+        lotId,
+      },
+      orderBy: {
+        timestamp: "desc",
+      },
+    });
   }
 
 };

@@ -1,4 +1,4 @@
-import { UserType } from "@prisma/client";
+import { LotAction, UserType } from "@prisma/client";
 import { EmployeeCreateDTO } from "../dto/employee/EmployeeCreateDTO";
 import { UserPutDTO } from "../dto/user/UserPutDTO";
 import { EmployeeRepository } from "../repository/employee.repository";
@@ -55,23 +55,24 @@ export const EmployeeService = {
     return lot;
   },
 
-  async associateResidentLot(cpf: string, lotId: number) {
-    //somente usuário do tipo gestão podem fazer isso, porém como isso é questão de autorização, vai ser tratado no controller ou em um middleware, aqui a gente só faz a associação mesmo
+  async associateResidentLot(resindetCpf: string, employeeCpf: string, lotId: number) {
 
-    const user = await this.validateUser(cpf);
+    const user = await this.validateUser(resindetCpf);
 
     const lot = await this.validateLot(lotId);
 
     const residentAlreadAssociated = await LotRepository.getResidentByCpfInLot(
       lotId,
-      cpf,
+      resindetCpf,
     );
 
     if (residentAlreadAssociated) {
       throw new AlreadyAssocietedException();
     }
 
-    return LotRepository.associateResidentLot(cpf, lotId);
+    await LotRepository.createHistoricEntry(lotId, LotAction.ADDED_RESIDENT, employeeCpf, resindetCpf);
+
+    return LotRepository.associateResidentLot(resindetCpf, lotId);
   },
 
   async dessociateResidentLot(cpf: string, lotId: number) {
@@ -138,4 +139,13 @@ export const EmployeeService = {
 
     return LotRepository.unmakeResponsibleResidentLot(cpf, lotId);
   },
+  async getLotHistoric(lotId: number) {
+    const lot = await LotRepository.get(lotId);
+
+    if (!lot) {
+      throw new LotNotFoundException();
+    }
+
+    return LotRepository.getLotHistoric(lotId);
+  }
 };

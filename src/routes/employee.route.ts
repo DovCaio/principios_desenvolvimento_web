@@ -108,5 +108,7 @@ useRouter.put("/make_responsible_resident/:cpf/lot/:lotId", authenticate, author
 
 useRouter.delete("/unmake_responsible_resident/:cpf/lot/:lotId", authenticate, authorizationEmployeeManagment, EmployeeController.unmakeResponsibleResidentLot);
 
+useRouter.get("/lot_historic/:lotId", authenticate, authorizationEmployeeManagment, EmployeeController.getLotHistoric);
+
 
 export default useRouter;
