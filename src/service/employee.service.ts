@@ -1,4 +1,4 @@
-import { UserType } from "@prisma/client";
+import { LotAction, UserType } from "@prisma/client";
 import { EmployeeCreateDTO } from "../dto/employee/EmployeeCreateDTO";
 import { UserPutDTO } from "../dto/user/UserPutDTO";
 import { EmployeeRepository } from "../repository/employee.repository";
@@ -55,43 +55,46 @@ export const EmployeeService = {
     return lot;
   },
 
-  async associateResidentLot(cpf: string, lotId: number) {
-    //somente usuário do tipo gestão podem fazer isso, porém como isso é questão de autorização, vai ser tratado no controller ou em um middleware, aqui a gente só faz a associação mesmo
+  async associateResidentLot(resindetCpf: string, employeeCpf: string, lotId: number) {
 
-    const user = await this.validateUser(cpf);
+    const user = await this.validateUser(resindetCpf);
 
     const lot = await this.validateLot(lotId);
 
     const residentAlreadAssociated = await LotRepository.getResidentByCpfInLot(
       lotId,
-      cpf,
+      resindetCpf,
     );
 
     if (residentAlreadAssociated) {
       throw new AlreadyAssocietedException();
     }
 
-    return LotRepository.associateResidentLot(cpf, lotId);
+    await LotRepository.createHistoricEntry(lotId, LotAction.ADDED_RESIDENT, employeeCpf, resindetCpf);
+
+    return LotRepository.associateResidentLot(resindetCpf, lotId);
   },
 
-  async dessociateResidentLot(cpf: string, lotId: number) {
-    const user = await this.validateUser(cpf);
+  async dessociateResidentLot(residentCpf: string, employeeCpf: string, lotId: number) {
+    const user = await this.validateUser(residentCpf);
 
     const lot = await this.validateLot(lotId);
 
     const residentAlreadAssociated = await LotRepository.getResidentByCpfInLot(
       lotId,
-      cpf,
+      residentCpf,
     );
 
     if (!residentAlreadAssociated) {
       throw new NotAssociateResidentException();
     }
 
-    return LotRepository.dessociateResidentLot(cpf, lotId);
+    await LotRepository.createHistoricEntry(lotId, LotAction.REMOVED_RESIDENT, employeeCpf, residentCpf);
+
+    return LotRepository.dessociateResidentLot(residentCpf, lotId);
   },
-  async associateResidentLotResponsible(cpf: string, lotId: number) {
-    const user = await ResidentRepository.getOne(cpf);
+  async associateResidentLotResponsible(residentCpf: string, employeeCpf: string, lotId: number) {
+    const user = await ResidentRepository.getOne(residentCpf);
 
     if (!user) {
       throw new UserNotFoundException();
@@ -103,11 +106,13 @@ export const EmployeeService = {
       throw new LotNotFoundException();
     }
 
-    return LotRepository.associateResidentLotResponsible(cpf, lotId);
+    await LotRepository.createHistoricEntry(lotId, LotAction.ASSIGNED_RESPONSIBLE, employeeCpf, residentCpf);
+
+    return LotRepository.associateResidentLotResponsible(residentCpf, lotId);
   },
 
-  async unmakeResponsibleResidentLot(cpf: string, lotId: number) {
-    const user = await ResidentRepository.getOne(cpf);
+  async unmakeResponsibleResidentLot(residentCpf: string, employeeCpf: string, lotId: number) {
+    const user = await ResidentRepository.getOne(residentCpf);
 
     if (!user) {
       throw new UserNotFoundException();
@@ -121,14 +126,14 @@ export const EmployeeService = {
 
     const residentAlreadAssociated = await LotRepository.getResidentByCpfInLot(
       lotId,
-      cpf,
+      residentCpf,
     );
 
     if (!residentAlreadAssociated) {
       throw new NotAssociateResidentException();
     }
 
-    const isResponsible = await LotRepository.isResponsible(cpf, lotId);
+    const isResponsible = await LotRepository.isResponsible(residentCpf, lotId);
 
     if (!isResponsible) {
       throw new NotAssociateResidentException(
@@ -136,6 +141,17 @@ export const EmployeeService = {
       );
     }
 
-    return LotRepository.unmakeResponsibleResidentLot(cpf, lotId);
+      await LotRepository.createHistoricEntry(lotId, LotAction.UNASSIGNED_RESPONSIBLE, employeeCpf, residentCpf);
+
+    return LotRepository.unmakeResponsibleResidentLot(residentCpf, lotId);
   },
+  async getLotHistoric(lotId: number) {
+    const lot = await LotRepository.get(lotId);
+
+    if (!lot) {
+      throw new LotNotFoundException();
+    }
+
+    return LotRepository.getLotHistoric(lotId);
+  }
 };

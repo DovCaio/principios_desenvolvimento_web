@@ -22,3 +22,8 @@ export const generateToken = (cpf: string, username: string, userType: string): 
 export const verifyToken = (token: string): any => {
   return jwt.verify(token, JWT_SECRET);
 };
+
+export const getCpfFromToken = (token: string): string => {
+  const decoded: any = verifyToken(token);
+  return decoded.cpf;
+}

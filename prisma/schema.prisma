@@ -60,6 +60,7 @@ model User {
   serviceRequests ServiceRequest[]
   auditLogs       AuditLog[]
 
+
 }
 
 model Resident {
@@ -70,6 +71,9 @@ model Resident {
 
   responsibleFor Lot? @relation("LotResponsible")
 
+  lotHistoric LotHistoric[]
+
+
   userCpf String @unique
   user    User   @relation(fields: [userCpf], references: [cpf])
 }
@@ -78,6 +82,8 @@ model Employee {
   id Int @id @default(autoincrement())
 
   employeeType EmployeeType
+
+  lotHistoric LotHistoric[]
 
   userCpf String @unique
   user    User   @relation(fields: [userCpf], references: [cpf])
@@ -106,6 +112,8 @@ model Lot {
 
   residents Resident[] @relation("LotResidents")
   visitors  Visitor[]  @relation("LotVisitors")
+
+  lotHistoric LotHistoric[]
 
   serviceRequests ServiceRequest[]
 }
@@ -174,4 +182,25 @@ model AuditLog {
   duration  Int
   userCpf   String?
   user      User?     @relation(fields: [userCpf], references: [cpf])
+}
+
+enum LotAction {
+  ASSIGNED_RESPONSIBLE
+  UNASSIGNED_RESPONSIBLE
+  ADDED_RESIDENT
+  REMOVED_RESIDENT
+  ADDED_VISITOR
+  REMOVED_VISITOR
+}
+
+model LotHistoric {
+  id        Int      @id @default(autoincrement())
+  lotId     Int
+  lot       Lot      @relation(fields: [lotId], references: [id])
+  residentCpf   String
+  resident      Resident     @relation(fields: [residentCpf], references: [userCpf])
+  employeeCpf   String
+  employee      Employee     @relation(fields: [employeeCpf], references: [userCpf])
+  action    LotAction
+  timestamp DateTime @default(now())
 }
