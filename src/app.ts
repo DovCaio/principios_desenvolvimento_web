@@ -5,9 +5,15 @@ import { generalLimiter } from "./middleware/rateLimit.middleware"; // <--- Impo
 import routes from "./routes";
 import { auditMiddleware } from "./middleware/audit.middleware";
 
+import cors from "cors";
+
 dotenv.config();
 
 export const app = express();
+
+const cors_ = cors()
+
+app.use(cors_);
 
 app.use(express.json());
 
