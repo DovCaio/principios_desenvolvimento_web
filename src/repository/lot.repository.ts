@@ -21,7 +21,12 @@ export const LotRepository = {
     });
   },
   async getAll() {
-    return prisma.lot.findMany();
+    return prisma.lot.findMany({
+	    include: {
+	   	 residents: true
+
+	    }
+    });
   },
   async delete(id: number) {
     await prisma.lot.delete({
