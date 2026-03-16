@@ -67,5 +67,20 @@ export const ServiceRequestController = {
         } catch (error: any) {
             return res.status(400).json({ error: error.message });
         }
+    },
+
+    async listByUser(req: Request, res: Response) {
+        try {
+            const userCpf = (req as any).user?.cpf || req.headers['x-user-cpf'] as string;
+
+            if (!userCpf) {
+                return res.status(400).json({ error: "CPF do usuário não identificado" });
+            }
+
+            const result = await ServiceRequestService.listByUser(userCpf);
+            return res.status(200).json(result);
+        } catch (error: any) {
+        return res.status(400).json({ error: error.message });
+        }
     }
 };

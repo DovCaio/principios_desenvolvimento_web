@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { ServiceRequestController } from "../controller/serviceRequest.controller";
+import { authenticate } from "../middleware/auth.middleware";
 
 const serviceRoutes = Router();
 
@@ -91,6 +92,6 @@ serviceRoutes.put("/:id", ServiceRequestController.update);
  * description: Solicitação removida
  */
 serviceRoutes.delete("/:id", ServiceRequestController.delete);
-
+serviceRoutes.get("/me", authenticate, ServiceRequestController.listByUser);
 export { serviceRoutes };
 

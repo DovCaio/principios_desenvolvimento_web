@@ -81,6 +81,18 @@ export const SchedulingService = {
       return await prisma.scheduling.findMany();
   },
 
+  async listByUser(userCpf: string) {
+    return await prisma.scheduling.findMany({
+      where: { userCpf },
+      include: {
+        leisureArea: {
+          select: { name: true }
+        }
+      },
+      orderBy: { startTime: 'asc' }
+    });
+  },
+
   async delete(id: number) {
       return await prisma.scheduling.delete({ where: { id } });
   }
