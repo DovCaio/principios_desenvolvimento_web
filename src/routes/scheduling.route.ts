@@ -5,6 +5,6 @@ import { authenticate } from "../middleware/auth.middleware";
 const schedulingRoutes = Router();
 
 schedulingRoutes.post("/", authenticate, SchedulingController.create);
+schedulingRoutes.get("/", authenticate, SchedulingController.list);
 
 export { schedulingRoutes };
-

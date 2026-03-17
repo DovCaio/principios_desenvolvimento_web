@@ -76,5 +76,13 @@ export const ServiceRequestService = {
         }
         
         return ServiceRequestRepository.delete(id);
+    },
+
+    async listByUser(requesterCpf: string) {
+        return await prisma.serviceRequest.findMany({
+        where: { requesterCpf },
+        orderBy: { createdAt: 'desc' }
+        });
     }
+
 };

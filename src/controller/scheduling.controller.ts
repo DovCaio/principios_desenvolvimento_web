@@ -19,4 +19,23 @@ export const SchedulingController = {
       return res.status(400).json({ message: error.message });
     }
   },
+
+  async list(req: Request, res: Response) {
+    try {
+      const userCpf = (req as any).user.cpf;
+      const schedulings = await SchedulingService.listByUser(userCpf);
+      
+      const formattedSchedulings = schedulings.map((s: any) => ({
+        id: s.id,
+        leisureAreaId: s.leisureAreaId,
+        areaName: s.leisureArea?.name,
+        startTime: s.startTime,
+        endTime: s.endTime
+      }));
+
+      return res.status(200).json(formattedSchedulings);
+    } catch (error: any) {
+      return res.status(400).json({ message: error.message });
+    }
+  }
 };
